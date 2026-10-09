@@ -1,0 +1,5 @@
+# Secrets never belong in this toolkit
+*.env
+.env*
+!.env.example
+_project-data/
