@@ -17,10 +17,8 @@
      Badge generator → https://shields.io
      Stack badge format → https://img.shields.io/badge/<label>-<color>?logo=<logo-slug>
      Logo slugs → https://simpleicons.org
-  4. For DEMO GIF: record with Loom, Kap (mac), or ShareX (windows),
-     export as GIF, upload to the repo /docs/assets/ and link here.
-  5. Delete any section that doesn't apply to your project.
-  6. Keep the file under ~120 lines in the rendered view — recruiters
+  4. Delete any section that doesn't apply to your project.
+  5. Keep the file under ~120 lines in the rendered view — recruiters
      scroll for 8 seconds.
 -->
 
@@ -59,13 +57,6 @@
   <img src="https://img.shields.io/badge/Claude_API-D97757?style=flat-square" alt="Claude API">
   <img src="https://img.shields.io/badge/Groq-F55036?style=flat-square" alt="Groq">
   <img src="https://img.shields.io/badge/license-GPL--3.0-{{BRAND_COLOR_NO_HASH}}?style=flat-square" alt="License">
-</p>
-
----
-
-<!-- DEMO GIF or SCREENSHOT — recruiter's first visual impression -->
-<p align="center">
-  <img src="docs/assets/demo.gif" alt="{{PROJECT_NAME}} demo" width="700">
 </p>
 
 ---
@@ -151,7 +142,11 @@ instead of unsafe-inline, which Next.js hydration currently requires."}}
 | [PRD](docs/PRD.md) | Product requirements — goals, user stories, non-goals |
 | [Architecture](docs/ARCHITECTURE.md) | System design, data flow, component breakdown |
 | [Decisions](docs/DECISIONS.md) | Every major technical decision and why |
-| [Setup](docs/SETUP.md) | Local dev setup, env vars, deployment |
+| [Setup](docs/SETUP.md) | Local dev setup and env vars |
+| [Deploy](docs/DEPLOY.md) | Production deployment, domains, rollback |
+| [Contributing](CONTRIBUTING.md) | How to propose changes |
+| [Changelog](CHANGELOG.md) | What changed in each release |
+| [Security](SECURITY.md) | How to report a vulnerability |
 
 
 ---

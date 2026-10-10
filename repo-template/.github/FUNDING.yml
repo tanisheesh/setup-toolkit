@@ -1,0 +1,25 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  Sponsor button config. Goes to: <repo>/.github/FUNDING.yml          ║
+# ║  Adds a "♥ Sponsor" button at the top of the repo.                   ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+#
+# How to fill: uncomment ONLY the platforms you actually have an active
+# account on (a link to an inactive Sponsors page looks broken). If none
+# are active, don't copy this file into the repo.
+# Tip: set it once in a `tanisheesh/.github` repo and it applies to every
+# repo that doesn't have its own FUNDING.yml.
+
+# github: [tanisheesh]                  # GitHub Sponsors (enable at github.com/sponsors)
+# buy_me_a_coffee: tanisheesh           # buymeacoffee.com/<username>
+# ko_fi: tanisheesh                     # ko-fi.com/<username>
+# patreon: tanisheesh                   # patreon.com/<username>
+# custom: ["https://tanisheesh.in"]     # any URL, e.g. a UPI / payment page
+
+# ──────────────────────────────────────────────────────────────────────────
+#  Tanish Poddar
+#  Website   https://tanisheesh.in
+#  LinkedIn  https://linkedin.com/in/tanisheesh
+#  GitHub    https://github.com/tanisheesh
+#  Email     hey@tanisheesh.in
+# ──────────────────────────────────────────────────────────────────────────

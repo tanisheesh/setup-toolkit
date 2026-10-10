@@ -72,7 +72,7 @@ cp .env.example .env.local
 
 ## 5. Deploy to production
 
-See [infra/DEPLOY.md](infra/DEPLOY.md) for Railway / Vercel / AWS deployment instructions.
+See [DEPLOY.md](DEPLOY.md) for production deployment, custom domain and rollback steps.
 
 ---
 

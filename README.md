@@ -33,7 +33,6 @@ Clone it next to your projects:
 ```
 Projects/
   setup-toolkit/     ← this repo
-  _project-data/     ← your private credentials (never committed)
   my-app/            ← the repo to set up
 ```
 
@@ -41,7 +40,7 @@ Then open your coding agent inside `my-app/` and say:
 
 > Follow `../setup-toolkit/AGENTS.md` for this repo.
 
-The agent reads the code, asks for the subdomain and other missing values, writes the docs, commits them in the standard style, sets the GitHub metadata, and points the subdomain. It reports back with a checklist. **It never pushes without your approval.**
+The agent reads the code, asks for the subdomain and other missing values, writes the docs, adds the GitHub templates and automation, commits in the standard style, sets the GitHub metadata, and points the subdomain. It reports back with a checklist. **It never pushes without your approval.**
 
 ---
 
@@ -50,26 +49,85 @@ The agent reads the code, asks for the subdomain and other missing values, write
 | Path | Purpose |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | Step-by-step playbook for the coding agent: order of steps, what to ask, safety rules, done-checklist |
-| [`docs-templates/`](docs-templates) | `readme`, `prd`, `architecture`, `decisions`, `setup` templates → become `README.md` + `docs/*.md` |
+| [`repo-template/`](repo-template) | Every file a repo needs, laid out exactly where it goes (see below) |
 | [`guidelines/commit-style.md`](guidelines/commit-style.md) | Emoji commit format: `<emoji> [#issue] [scope:] <message>` |
 | [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Definition of done, naming conventions, PR and git-safety rules |
-| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Sets a repo's description, homepage and topics |
+| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Sets description, homepage and topics, enables Dependabot + security reporting, sets the report email secrets |
 | [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` to Vercel/Render and creates the GoDaddy CNAME |
+
+### `repo-template/`
+
+It mirrors a repo, so every file goes to the **same path** in your project:
+
+```
+repo-template/
+├── README.md                    project README (recruiter-first)
+├── CONTRIBUTING.md              setup, branches, commit style, PR checklist
+├── SECURITY.md                  private vulnerability reporting
+├── CODE_OF_CONDUCT.md
+├── CHANGELOG.md                 sections map 1:1 to commit emojis
+├── .editorconfig
+├── docs/
+│   ├── PRD.md  ARCHITECTURE.md  DECISIONS.md
+│   └── SETUP.md  DEPLOY.md
+└── .github/
+    ├── PULL_REQUEST_TEMPLATE.md
+    ├── ISSUE_TEMPLATE/          bug_report · feature_request · config
+    ├── FUNDING.yml
+    ├── dependabot.yml
+    └── workflows/
+        ├── ci.yml                       lint · typecheck · build · test, stack auto-detected
+        ├── dependabot-auto-merge.yml    merges dependency PRs once CI is green
+        └── maintenance-report.yml       weekly email report
+```
+
+**No agent needed.** Each template starts with a comment that says where it goes and how to fill it, so you can copy just the files you want:
+
+```powershell
+# everything at once
+Copy-Item -Recurse -Force .\repo-template\* ..\my-app\   # overwrites same-named files, e.g. README.md
+
+# or one file
+Copy-Item .\repo-template\SECURITY.md ..\my-app\
+```
+
+Then replace the `{{PLACEHOLDERS}}` and delete the instruction comments. The `.github/` files mostly work as-is.
+
+---
+
+## Automatic dependency updates
+
+Once the `.github/` files are in a repo, it maintains itself:
+
+| When (IST) | What happens |
+|---|---|
+| Monday 06:00 | Dependabot opens update PRs. Minor + patch are grouped into one PR, majors get their own |
+| On each PR | `ci.yml` runs lint, typecheck, build and tests |
+| CI passes | `dependabot-auto-merge.yml` squash-merges the PR |
+| CI fails | The PR stays open with a `needs-review` label and a comment |
+| Monday 10:00 | `maintenance-report.yml` emails what was merged, what's waiting, open security alerts and CI status on `main` |
+
+To hold major versions for manual review, set `AUTO_MERGE_MAJOR: "false"` in the auto-merge workflow. To switch to monthly, see the comments at the top of `dependabot.yml` and `maintenance-report.yml`.
 
 ---
 
 ## Credentials
 
-Scripts read tokens from environment variables. Keep them in `_project-data/CREDENTIALS.env`, **outside** this repo:
+Scripts read tokens from environment variables. Copy `.env.example` to `.env` in this folder and fill it in:
 
 ```env
 GITHUB_TOKEN=     # github.com/settings/tokens → classic, `repo` scope
 VERCEL_TOKEN=     # vercel.com/account/tokens
 RENDER_API_KEY=   # dashboard.render.com → Account → API Keys
 GODADDY_KEY=      # developer.godaddy.com/keys → format KEY:SECRET
+
+# Weekly maintenance report email (set as repo secrets by setup-github-repo.ps1)
+MAIL_USERNAME=    # Gmail address that sends the report
+MAIL_PASSWORD=    # Gmail App Password: myaccount.google.com/apppasswords
+ALERTS_TOKEN=     # optional: fine-grained PAT, "Dependabot alerts: read"
 ```
 
-`.gitignore` blocks `.env*` files and `_project-data/`, so they can't be committed here by accident.
+`.env` is gitignored, so your tokens never get committed. Only `.env.example` (key names, no values) is in the repo.
 
 ---
 

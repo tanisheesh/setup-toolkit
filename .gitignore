@@ -1,5 +1,8 @@
-# Secrets never belong in this toolkit
+# TANISH'S SETUP TOOLKIT · tanisheesh.in
+# Your real tokens live in .env. Never commit it.
+.env
+.env.*
 *.env
-.env*
 !.env.example
-_project-data/
+
+# Tanish Poddar · tanisheesh.in · github.com/tanisheesh · hey@tanisheesh.in
