@@ -141,5 +141,5 @@ Write-Host "DNS propagation: 2-10 min typically, up to 48h worst case." -Foregro
 #  Website   https://tanisheesh.in
 #  LinkedIn  https://linkedin.com/in/tanisheesh
 #  GitHub    https://github.com/tanisheesh
-#  Email     hey@tanisheesh.in
+#  Email     hi@tanisheesh.in
 # ──────────────────────────────────────────────────────────────────────────

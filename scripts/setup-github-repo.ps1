@@ -126,5 +126,5 @@ Write-Host "Tanish's Setup Toolkit · tanisheesh.in · github.com/tanisheesh" -F
 #  Website   https://tanisheesh.in
 #  LinkedIn  https://linkedin.com/in/tanisheesh
 #  GitHub    https://github.com/tanisheesh
-#  Email     hey@tanisheesh.in
+#  Email     hi@tanisheesh.in
 # ──────────────────────────────────────────────────────────────────────────
