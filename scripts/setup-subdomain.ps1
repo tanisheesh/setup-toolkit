@@ -33,6 +33,17 @@ param(
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 function Add-GoDaddyCNAME($subdomain, $target) {
+    $gddyExe = "$env:LOCALAPPDATA\Programs\gddy\gddy.exe"
+    if (Test-Path $gddyExe) {
+        try {
+            $out = & $gddyExe dns set $Domain --type CNAME --name $subdomain --data $target --ttl 600 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0 -or $out -match "already has conflicting CNAME data") {
+                Write-Host "    [GoDaddy] CNAME: $subdomain.$Domain → $target (via gddy CLI)" -ForegroundColor Green
+                return
+            }
+        } catch {}
+    }
+
     $uri = "https://api.godaddy.com/v1/domains/$Domain/records/CNAME/$subdomain"
     $body = '[{"data":"' + $target + '","ttl":600}]'
     # Try sso-key format first, then Bearer
@@ -51,23 +62,30 @@ function Add-GoDaddyCNAME($subdomain, $target) {
 
 function Add-VercelDomain($projectSlug, $subdomain) {
     $fqdn = "$subdomain.$Domain"
-    $uri  = "https://api.vercel.com/v9/projects/$projectSlug/domains"
-    $headers = @{
-        "Authorization" = "Bearer $VercelToken"
-        "Content-Type"  = "application/json"
-    }
-    $body = ConvertTo-Json @{ name = $fqdn }
-    try {
-        Invoke-RestMethod -Method POST -Uri $uri -Headers $headers -Body $body | Out-Null
-        Write-Host "    [Vercel]  Domain added: $fqdn" -ForegroundColor Green
-    } catch {
-        $err = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
-        if ($err.error.code -eq "domain_already_in_use" -or $err.error.code -eq "project_domain_already_exists") {
-            Write-Host "    [Vercel]  Already exists: $fqdn" -ForegroundColor Yellow
-        } else {
-            Write-Host "    [Vercel]  ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    $authPath = Join-Path $env:APPDATA "com.vercel.cli\Data\auth.json"
+    if (-not (Test-Path $authPath)) { $authPath = Join-Path $env:LOCALAPPDATA "com.vercel.cli\Data\auth.json" }
+    $cliToken = if (Test-Path $authPath) { (Get-Content $authPath | ConvertFrom-Json).token } else { $null }
+
+    foreach ($tok in @($VercelToken, $cliToken) | Where-Object { $_ }) {
+        $uri  = "https://api.vercel.com/v9/projects/$projectSlug/domains"
+        $headers = @{
+            "Authorization" = "Bearer $tok"
+            "Content-Type"  = "application/json"
+        }
+        $body = ConvertTo-Json @{ name = $fqdn }
+        try {
+            Invoke-RestMethod -Method POST -Uri $uri -Headers $headers -Body $body | Out-Null
+            Write-Host "    [Vercel]  Domain added: $fqdn" -ForegroundColor Green
+            return
+        } catch {
+            $err = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
+            if ($err.error.code -eq "domain_already_in_use" -or $err.error.code -eq "project_domain_already_exists") {
+                Write-Host "    [Vercel]  Already exists: $fqdn" -ForegroundColor Yellow
+                return
+            }
         }
     }
+    Write-Host "    [Vercel]  ERROR: Failed to add $fqdn" -ForegroundColor Red
 }
 
 function Get-RenderServiceId($onrenderHostname) {
