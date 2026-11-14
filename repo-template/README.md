@@ -40,7 +40,7 @@
 <p align="center">
   <!-- LIVE DEMO — most important link, always first -->
   <a href="{{LIVE_URL}}">
-    <img src="https://img.shields.io/badge/live_demo-{{BRAND_COLOR_NO_HASH}}-{{BRAND_COLOR_NO_HASH}}?style=flat-square" alt="Live Demo">
+    <img src="https://img.shields.io/badge/live_demo-visit-{{BRAND_COLOR_NO_HASH}}?style=flat-square" alt="Live Demo">
   </a>
   <!-- TECH STACK BADGES — pick what applies, delete the rest -->
   <img src="https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js" alt="Next.js">

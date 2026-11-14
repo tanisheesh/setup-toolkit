@@ -35,7 +35,7 @@ Full instructions are in [docs/SETUP.md](docs/SETUP.md). Short version:
 git clone https://github.com/{{YOUR_GITHUB_USERNAME}}/{{REPO_NAME}}   # your fork
 cd {{REPO_NAME}}
 {{e.g. npm install / pip install -e ".[dev]"}}
-cp .env.example .env.local
+cp .env.example .env   # or .env.local for Next.js
 {{e.g. npm run dev}}
 ```
 
@@ -60,7 +60,7 @@ cp .env.example .env.local
    {{e.g. npm run lint && npm run typecheck && npm run build && npm test}}
    ```
 
-4. **Open a pull request** against `main`. The PR template will guide you.
+4. **Open a pull request** against `main`. Use a clean **past-tense** PR title (e.g. `Added PDF export for summary view`). The PR template will guide you.
 
 ---
 

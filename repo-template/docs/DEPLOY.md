@@ -83,10 +83,16 @@ docker run -d -p {{PORT}}:{{PORT}} --env-file .env {{REPO_NAME}}
 
 ## 5. Custom domain
 
-`{{SUBDOMAIN}}.tanisheesh.in` is wired with the setup toolkit:
+`{{SUBDOMAIN}}.tanisheesh.in` is wired with the setup toolkit (`../setup-toolkit`):
 
 ```powershell
-.\scripts\setup-subdomain.ps1 -Subdomain "{{SUBDOMAIN}}" -Platform {{Vercel|Render}} {{-VercelProject "<slug>" | -RenderHost "<svc>.onrender.com"}}
+..\setup-toolkit\scripts\setup-subdomain.ps1 -Subdomain "{{SUBDOMAIN}}" -Platform {{Vercel|Render}} {{-VercelProject "<slug>" | -RenderHost "<svc>.onrender.com"}}
+```
+
+For Vercel projects, runtime/security defaults (`nodeVersion`, `directoryListing: false`, `protectedSourcemaps: true`, `gitForkProtection: true`, region) are applied with:
+
+```powershell
+..\setup-toolkit\scripts\setup-vercel-project.ps1 -Project "<vercel-project-slug>" -RepoPath .
 ```
 
 Manual fallback: add the domain in the host dashboard, then create a GoDaddy CNAME `{{SUBDOMAIN}}` → `{{cname.vercel-dns.com | <svc>.onrender.com}}`. HTTPS certificates are issued automatically once DNS resolves (2–10 min).

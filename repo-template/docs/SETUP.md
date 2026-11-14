@@ -33,10 +33,10 @@ cd {{REPO_NAME}}
 
 ## 2. Environment variables
 
-Copy `.env.example` to `.env.local` and fill in the values:
+Copy `.env.example` to `.env` (or `.env.local` for Next.js) and fill in the values:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env   # or .env.local for Next.js
 ```
 
 | Variable | Where to get it |
