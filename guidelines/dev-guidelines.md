@@ -6,44 +6,90 @@
 
 # 📔 Developer Guidelines
 
-Standard rules for every repo. Follow them unless the repo's own docs say otherwise.
+Standard engineering, architecture, and git rules for every repo. Follow them unless a repo's own `AGENTS.md` adds stricter project-specific rules.
 
-## Definition of Done
+---
 
-A task is `Done` only when it is:
+## 1. Definition of Done
 
-1. Running in production (live URL works)
-2. Tested on the real deployment, not just locally
-3. Documented. README / `docs/` are updated if behaviour, setup, or env vars changed
+A task is `Done` only when **all** of these are true:
 
-## Commits
+1. **Running in production** (or built and ready if it's a library/CLI).
+2. **Verified end-to-end** on the real deployment or preview — not just `localhost`.
+3. **All checks pass:** formatter, linter, typechecker, build, and automated tests (see [testing-guidelines.md](testing-guidelines.md)).
+4. **Peripheral files updated in the same PR:** README, `docs/`, `.env.example`, schemas, and tests that belong to the change.
 
-1. Split work into meaningful atomic commits, one unit of logic each. Avoid giant "update" commits.
-2. Commit messages follow [commit-style.md](commit-style.md).
-3. Never commit secrets. `.env*` files stay gitignored; ship a `.env.example` with variable names only.
+---
 
-## Code Style
+## 2. Change Categories & Review Discipline
 
-1. Run the project's formatter/linter before pushing (if the project has one).
-2. No dead code, debug logs, or changes unrelated to the task.
-3. Follow the existing file structure and code patterns of the repo.
-4. TypeScript/JavaScript:
-   - File names in `kebab-case` unless a framework convention requires otherwise.
-   - Variables and functions in `camelCase`.
-   - Next.js: use the App Router (`app/`). Don't add new code to the `pages/` directory; migrate the page first.
-5. Python: `snake_case` for files, functions, and variables; `PascalCase` for classes.
+| Category | Examples | Minimum Bar |
+|---|---|---|
+| **Core infra / auth / billing / DB** | Auth flows, webhooks, migrations, API gateways, shared libs | Strict commit style, unit + integration tests, CodeQL + security checklist review |
+| **Product features & UI** | App Router pages, reusable components, forms, charts | Anti-slop UI check ([ui-guidelines.md](ui-guidelines.md)), 4 UI states, Playwright/a11y check |
+| **Non-core / one-off scripts** | Event microsites, admin utilities, seeders | Clean modular code, no committed secrets, smoke-tested |
 
-## Branches & Pull Requests
+- **Peripheral Files Rule:** Keep docs, `.env.example`, and tests in the **same PR** as the code they describe. Never leave documentation "for later."
+- **API & App Boundaries:**
+  - Prefer dedicated focused services (`api-*`) over turning one legacy `api` monolith into a kitchen sink.
+  - **Next.js:** Always use the **App Router (`app/`)**. Never add new features to `pages/` — migrate the route to `app/` first.
 
-1. `main` is always deployable. Do larger work on a branch and merge via PR.
-2. Keep docs and example files in the same PR as the code they describe.
-3. Before merging: build passes, linter passes, feature works on the preview deployment.
+---
 
-## Git Safety
+## 3. Code Style & File Structure
 
-> ⚠️ **No force-push or `git reset --hard` on `main`.** Free to do so on your own feature branches.
+1. **Zero noise:** No dead code, commented-out blocks, unused imports, or stray `console.log` / `print` statements.
+2. **File size limit:** Keep files focused and under **~300 lines**. Split growing files into cohesive modules (`components/`, `hooks/`, `lib/`, `server/`).
+3. **File naming:**
+   - **TypeScript / JavaScript:** `kebab-case` (`user-profile.ts`, `use-debounce.ts`, `auth-guard.tsx`), unless a framework explicitly requires otherwise (`page.tsx`, `layout.tsx`, `route.ts`).
+   - **Python:** `snake_case` for files, functions, and variables; `PascalCase` for classes.
+4. **TypeScript / JavaScript rules:**
+   - Variables and functions in `camelCase`; React components and types/interfaces in `PascalCase`.
+   - Use **strict equality** (`===` / `!==`), never loose equality (`==` / `!=`).
+   - Prefer `async/await` over raw `.then()` promise chains or nested callbacks.
+   - Prefer standalone `function` declarations with **named exports at definition** (`export async function ...`). Only use `export default` where the framework requires it (`page.tsx`, `layout.tsx`, `next.config.*`).
+   - Prefer `if/else` early returns and object lookup maps over sprawling `switch` blocks or deep nesting.
+   - Use `for...of` for async iteration or early exit; avoid `Array.prototype.forEach()` for async work.
+   - **No type-escape hatches:** Never use `@ts-ignore`, `@ts-expect-error`, or `@ts-nocheck`. Avoid `any` — use `unknown` + Zod/type-guard narrowing.
+   - **Error handling:** Never swallow errors with empty `catch {}` blocks. Let pure helpers throw descriptive errors; catch at API/I/O/UI boundaries to map to clean HTTP status codes, logs, and user-safe states.
+5. **Comments:** Explain *why* (invariants, edge cases, external constraints), never *what*. Keep inline comments concise; use docstrings/JSDoc on exported public modules and complex contracts.
 
-> ⚠️ **Rollbacks:** when rolling back on Vercel / Render / any host, note it in the commit or PR so the next deploy doesn't silently re-ship the broken version.
+---
+
+## 4. Reusable Component & Module Architecture
+
+Organize code by responsibility so UI, state, and business logic stay decoupled and reusable:
+
+```text
+src/
+  components/
+    ui/            # Pure, domain-agnostic primitives (Button, Badge, Modal, EmptyState, DataTable)
+    features/      # Domain components composed from ui/ primitives — no raw fetch() inside JSX
+  hooks/           # Reusable client hooks (data fetching, form state, media queries)
+  lib/             # Pure business logic, Zod/Pydantic schemas, formatters, DB/API clients
+  app/ (or routes) # Thin route handlers & pages: validate input -> call lib/ -> return response
+```
+
+- **Rule of Two:** If a UI block, badge map, formatter, or fetch wrapper appears in 2+ places, extract it into a shared component or helper.
+- **Props composition over flag soup:** Compose via `children`, slots, and `variant`/`size` maps (`cva` / Tailwind) instead of adding 8 boolean mode flags to one component.
+- **Single source of truth for types:** Derive TS types from Zod / Prisma / Drizzle / Pydantic schemas (`z.infer<typeof ...>`) rather than duplicating manual interfaces.
+
+---
+
+## 5. Commits, Branches & Pull Requests
+
+1. **Atomic commits:** Split work into logical, reviewable units following [commit-style.md](commit-style.md). Avoid giant `"update"` commits.
+2. **Secrets stay out of Git:** Never commit `.env*` files. Every new env var goes into `.env.example` with an empty value and source comment.
+3. **`main` is always deployable:** Do larger features/refactors on `feat/`, `fix/`, `refactor/`, `docs/`, `chore/`, or `test/` branches and merge via PR.
+4. **PR hygiene:** Use plain-English **past-tense** PR titles (no emojis/issue hashes in PR titles), check off the PR template, and ensure CI + CodeQL + Dependency Review + tests pass before merging.
+
+---
+
+## 6. Git & Production Safety
+
+> ⚠️ **No force-push or `git reset --hard` on `main`.** Use feature branches/forks for history rewrites.
+
+> ⚠️ **Rollbacks:** When rolling back on Vercel, Render, or any host, immediately record the rollback reason and target SHA in a commit or PR so the next push does not silently re-ship the broken build.
 
 ---
 
