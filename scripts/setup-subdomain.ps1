@@ -5,19 +5,13 @@
 #
 # setup-subdomain.ps1
 # Adds ONE <subdomain>.tanisheesh.in to a Vercel project or Render service
-# and creates the matching CNAME record in GoDaddy.
+# and creates/overwrites the matching CNAME record in GoDaddy.
 #
 # Usage:
 #   Vercel:
 #     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Vercel -VercelProject "<vercel-project-slug>"
 #   Render:
 #     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Render -RenderHost "<service>.onrender.com"
-#
-# Credentials: pass as params, or set env vars VERCEL_TOKEN / GODADDY_KEY / RENDER_API_KEY,
-# or it will prompt for the ones needed.
-#   Vercel Token       → vercel.com/account/tokens
-#   GoDaddy Key+Secret → developer.godaddy.com/keys   (format: KEY:SECRET)
-#   Render API Key     → dashboard.render.com/u/<you>/account/api-keys
 
 param(
     [Parameter(Mandatory)][string]$Subdomain,
@@ -32,42 +26,89 @@ param(
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Add-GoDaddyCNAME($subdomain, $target) {
+function Read-RequiredSecret([string]$prompt, [string]$envName) {
+    if ([Console]::IsInputRedirected) {
+        throw "Missing $envName in environment (non-interactive shell cannot prompt)."
+    }
+    return (Read-Host $prompt)
+}
+
+function Get-HttpErrorText($errRecord) {
+    if ($errRecord.ErrorDetails -and $errRecord.ErrorDetails.Message) {
+        return $errRecord.ErrorDetails.Message
+    }
+    return $errRecord.Exception.Message
+}
+
+function Get-VercelCliToken {
+    $candidates = @(
+        (Join-Path $env:APPDATA "com.vercel.cli\Data\auth.json"),
+        (Join-Path $env:LOCALAPPDATA "com.vercel.cli\Data\auth.json")
+    )
+    foreach ($authPath in $candidates) {
+        if ($authPath -and (Test-Path $authPath)) {
+            try {
+                $tok = (Get-Content $authPath -Raw | ConvertFrom-Json).token
+                if ($tok) { return $tok }
+            } catch {}
+        }
+    }
+    return $null
+}
+
+function Add-GoDaddyCNAME($subdomainName, $target) {
     $gddyExe = "$env:LOCALAPPDATA\Programs\gddy\gddy.exe"
-    if (Test-Path $gddyExe) {
+    if ($gddyExe -and (Test-Path $gddyExe)) {
         try {
-            $out = & $gddyExe dns set $Domain --type CNAME --name $subdomain --data $target --ttl 600 2>&1 | Out-String
-            if ($LASTEXITCODE -eq 0 -or $out -match "already has conflicting CNAME data") {
-                Write-Host "    [GoDaddy] CNAME: $subdomain.$Domain → $target (via gddy CLI)" -ForegroundColor Green
+            $out = & $gddyExe dns set $Domain --type CNAME --name $subdomainName --data $target --ttl 600 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "    [GoDaddy] CNAME: $subdomainName.$Domain -> $target (via gddy CLI)" -ForegroundColor Green
                 return
             }
-        } catch {}
+            if ($out -match "already has conflicting CNAME data") {
+                Write-Host "    [GoDaddy] gddy reported CNAME conflict; attempting REST API overwrite..." -ForegroundColor Yellow
+            } else {
+                Write-Host "    [GoDaddy] gddy CLI failed ($($out.Trim())); falling back to REST API..." -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "    [GoDaddy] gddy CLI error: $($_.Exception.Message); falling back to REST API..." -ForegroundColor Yellow
+        }
     }
 
-    $uri = "https://api.godaddy.com/v1/domains/$Domain/records/CNAME/$subdomain"
-    $body = '[{"data":"' + $target + '","ttl":600}]'
-    # Try sso-key format first, then Bearer
+    if (-not $GoDaddyKey) {
+        $GoDaddyKey = Read-RequiredSecret "GoDaddy Key (developer.godaddy.com/keys, format KEY:SECRET)" "GODADDY_KEY"
+    }
+
+    $uri = "https://api.godaddy.com/v1/domains/$Domain/records/CNAME/$subdomainName"
+    $body = ConvertTo-Json @(@{ data = $target; ttl = 600 }) -Compress
+    $lastErr = $null
+
     foreach ($authHeader in @("sso-key $GoDaddyKey", "Bearer $GoDaddyKey")) {
         $headers = @{ "Authorization" = $authHeader; "Content-Type" = "application/json" }
         try {
             Invoke-RestMethod -Method PUT -Uri $uri -Headers $headers -Body $body | Out-Null
-            Write-Host "    [GoDaddy] CNAME: $subdomain.$Domain → $target" -ForegroundColor Green
+            Write-Host "    [GoDaddy] CNAME: $subdomainName.$Domain -> $target" -ForegroundColor Green
             return
         } catch {
+            $lastErr = Get-HttpErrorText $_
             if ($authHeader -notlike "Bearer*") { continue }
-            Write-Host "    [GoDaddy] ERROR 401 — check API key permissions at developer.godaddy.com/keys" -ForegroundColor Red
         }
     }
+    Write-Host "    [GoDaddy] ERROR: $lastErr" -ForegroundColor Red
 }
 
-function Add-VercelDomain($projectSlug, $subdomain) {
-    $fqdn = "$subdomain.$Domain"
-    $authPath = Join-Path $env:APPDATA "com.vercel.cli\Data\auth.json"
-    if (-not (Test-Path $authPath)) { $authPath = Join-Path $env:LOCALAPPDATA "com.vercel.cli\Data\auth.json" }
-    $cliToken = if (Test-Path $authPath) { (Get-Content $authPath | ConvertFrom-Json).token } else { $null }
+function Add-VercelDomain($projectSlug, $subdomainName) {
+    $fqdn = "$subdomainName.$Domain"
+    $cliToken = Get-VercelCliToken
+    $tokens = @($VercelToken, $cliToken) | Where-Object { $_ } | Select-Object -Unique
 
-    foreach ($tok in @($VercelToken, $cliToken) | Where-Object { $_ }) {
-        $uri  = "https://api.vercel.com/v9/projects/$projectSlug/domains"
+    if ($tokens.Count -eq 0) {
+        $tokens = @(Read-RequiredSecret "Vercel Token (vercel.com/account/tokens)" "VERCEL_TOKEN")
+    }
+
+    $lastErr = $null
+    foreach ($tok in $tokens) {
+        $uri = "https://api.vercel.com/v9/projects/$projectSlug/domains"
         $headers = @{
             "Authorization" = "Bearer $tok"
             "Content-Type"  = "application/json"
@@ -78,49 +119,71 @@ function Add-VercelDomain($projectSlug, $subdomain) {
             Write-Host "    [Vercel]  Domain added: $fqdn" -ForegroundColor Green
             return
         } catch {
-            $err = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
-            if ($err.error.code -eq "domain_already_in_use" -or $err.error.code -eq "project_domain_already_exists") {
-                Write-Host "    [Vercel]  Already exists: $fqdn" -ForegroundColor Yellow
-                return
+            $rawMsg = Get-HttpErrorText $_
+            $lastErr = $rawMsg
+            if ($rawMsg) {
+                $err = $rawMsg | ConvertFrom-Json -ErrorAction SilentlyContinue
+                if ($err.error.code -eq "domain_already_in_use" -or $err.error.code -eq "project_domain_already_exists") {
+                    Write-Host "    [Vercel]  Already exists: $fqdn" -ForegroundColor Yellow
+                    return
+                }
             }
         }
     }
-    Write-Host "    [Vercel]  ERROR: Failed to add $fqdn" -ForegroundColor Red
+    Write-Host "    [Vercel]  ERROR: Failed to add $fqdn ($lastErr)" -ForegroundColor Red
 }
 
 function Get-RenderServiceId($onrenderHostname) {
-    # Fetch all services and match by service slug in the URL
-    $uri = "https://api.render.com/v1/services?limit=50"
     $headers = @{ "Authorization" = "Bearer $RenderApiKey" }
+    $slug = $onrenderHostname -replace "\.onrender\.com$", ""
+    $cursor = $null
+    $all = @()
+
     try {
-        $res = Invoke-RestMethod -Method GET -Uri $uri -Headers $headers
-        $slug = $onrenderHostname -replace "\.onrender\.com$", ""
-        $match = $res | Where-Object { $_.service.slug -eq $slug -or $_.service.name -like "*$slug*" } | Select-Object -First 1
-        return $match.service.id
+        do {
+            $uri = "https://api.render.com/v1/services?limit=100"
+            if ($cursor) { $uri += "&cursor=$([uri]::EscapeDataString($cursor))" }
+            $res = Invoke-RestMethod -Method GET -Uri $uri -Headers $headers
+            if (-not $res -or $res.Count -eq 0) { break }
+            $all += $res
+            $cursor = $res[-1].cursor
+        } while ($res.Count -eq 100 -and $cursor)
+
+        # Prefer exact slug or URL match before wildcard name match
+        $exact = $all | Where-Object {
+            $_.service.slug -eq $slug -or
+            ($_.service.serviceDetails.url -and $_.service.serviceDetails.url -match [regex]::Escape($onrenderHostname))
+        } | Select-Object -First 1
+        if ($exact) { return $exact.service.id }
+
+        $fuzzy = $all | Where-Object { $_.service.name -like "*$slug*" } | Select-Object -First 1
+        return $fuzzy.service.id
     } catch {
-        Write-Host "    [Render]  Could not query services: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "    [Render]  Could not query services: $(Get-HttpErrorText $_)" -ForegroundColor Red
         return $null
     }
 }
 
-function Add-RenderDomain($serviceId, $subdomain) {
-    $fqdn = "$subdomain.$Domain"
+function Add-RenderDomain($serviceId, $subdomainName) {
+    $fqdn = "$subdomainName.$Domain"
     $uri  = "https://api.render.com/v1/services/$serviceId/custom-domains"
     $headers = @{
         "Authorization" = "Bearer $RenderApiKey"
         "Content-Type"  = "application/json"
     }
-    $body = '{"name":"' + $fqdn + '"}'
+    $body = ConvertTo-Json @{ name = $fqdn }
     try {
         Invoke-RestMethod -Method POST -Uri $uri -Headers $headers -Body $body | Out-Null
         Write-Host "    [Render]  Domain added: $fqdn" -ForegroundColor Green
+        return $true
     } catch {
-        $errMsg = $_.ErrorDetails.Message
+        $errMsg = Get-HttpErrorText $_
         if ($errMsg -like "*already*") {
             Write-Host "    [Render]  Already exists: $fqdn" -ForegroundColor Yellow
-        } else {
-            Write-Host "    [Render]  ERROR: $errMsg" -ForegroundColor Red
+            return $true
         }
+        Write-Host "    [Render]  ERROR: $errMsg" -ForegroundColor Red
+        return $false
     }
 }
 
@@ -129,9 +192,16 @@ function Add-RenderDomain($serviceId, $subdomain) {
 if ($Platform -eq "Vercel" -and -not $VercelProject) { throw "-VercelProject is required when -Platform Vercel" }
 if ($Platform -eq "Render" -and -not $RenderHost)    { throw "-RenderHost is required when -Platform Render" }
 
-if (-not $GoDaddyKey) { $GoDaddyKey = Read-Host "GoDaddy Key (developer.godaddy.com/keys)" }
-if ($Platform -eq "Vercel" -and -not $VercelToken)  { $VercelToken  = Read-Host "Vercel Token   (vercel.com/account/tokens)" }
-if ($Platform -eq "Render" -and -not $RenderApiKey) { $RenderApiKey = Read-Host "Render API Key (dashboard.render.com → Account → API Keys)" }
+$gddyCliPath = "$env:LOCALAPPDATA\Programs\gddy\gddy.exe"
+if (-not $GoDaddyKey -and -not (Test-Path $gddyCliPath)) {
+    $GoDaddyKey = Read-RequiredSecret "GoDaddy Key (developer.godaddy.com/keys, format KEY:SECRET)" "GODADDY_KEY"
+}
+if ($Platform -eq "Vercel" -and -not $VercelToken -and -not (Get-VercelCliToken)) {
+    $VercelToken = Read-RequiredSecret "Vercel Token (vercel.com/account/tokens)" "VERCEL_TOKEN"
+}
+if ($Platform -eq "Render" -and -not $RenderApiKey) {
+    $RenderApiKey = Read-RequiredSecret "Render API Key (dashboard.render.com -> Account -> API Keys)" "RENDER_API_KEY"
+}
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -143,11 +213,15 @@ if ($Platform -eq "Vercel") {
 } else {
     $svcId = Get-RenderServiceId $RenderHost
     if ($svcId) {
-        Add-RenderDomain $svcId $Subdomain
+        $ok = Add-RenderDomain $svcId $Subdomain
+        if ($ok) {
+            Add-GoDaddyCNAME $Subdomain $RenderHost
+        } else {
+            Write-Host "    [GoDaddy] Skipped CNAME because Render domain step failed." -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "    [Render]  Service not found via API — add domain manually in Render dashboard." -ForegroundColor Yellow
+        Write-Host "    [Render]  Service '$RenderHost' not found via API — skipping GoDaddy CNAME. Add domain in Render dashboard first." -ForegroundColor Yellow
     }
-    Add-GoDaddyCNAME $Subdomain $RenderHost
 }
 
 Write-Host "`n━━━ Done ━━━" -ForegroundColor Green
