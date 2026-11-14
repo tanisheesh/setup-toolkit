@@ -7,11 +7,12 @@
 <h1 align="center">setup-toolkit</h1>
 
 <p align="center">
-  <strong>One playbook to set up every repo the same way: docs, commit style, GitHub metadata, and a custom subdomain.</strong>
+  <strong>One playbook to standardize every repo: docs, runtime AI guardrails, anti-slop UI, security &amp; testing, GitHub automation, and Vercel/DNS provisioning.</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/PowerShell-7+-5391FE?style=flat-square&logo=powershell&logoColor=white" alt="PowerShell 7+">
+  <img src="https://img.shields.io/badge/GitHub_Advanced-CodeQL_%C2%B7_Rulesets-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub">
   <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
   <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
   <img src="https://img.shields.io/badge/GoDaddy_DNS-1BDBDB?style=flat-square&logo=godaddy&logoColor=black" alt="GoDaddy DNS">
@@ -22,15 +23,17 @@
 
 ## What is this?
 
-Every project I ship gets the same treatment: a recruiter-friendly README, a PRD, architecture and decision docs, consistent commits, proper GitHub metadata, and a live `*.tanisheesh.in` URL. This toolkit holds that standard in one place. A coding agent reads `AGENTS.md` and applies all of it to any repo, asking me only for what it can't work out from the code.
+Every project I ship gets the same engineering bar: recruiter-friendly docs, runtime `AGENTS.md` / `CLAUDE.md` code-quality & anti-AI-slop UI rules, 4-layer testing, GitHub security scanning + rulesets + AI PR review, tuned Vercel settings, and a live `*.tanisheesh.in` URL.
+
+A coding agent reads `AGENTS.md` and applies the entire standard to any repo, asking only for values it can't infer from the code.
 
 ---
 
 ## Quick start
 
-Clone it next to your projects:
+Clone next to your projects:
 
-```
+```text
 Projects/
   setup-toolkit/     ← this repo
   my-app/            ← the repo to set up
@@ -40,7 +43,7 @@ Then open your coding agent inside `my-app/` and say:
 
 > Follow `../setup-toolkit/AGENTS.md` for this repo.
 
-The agent reads the code, asks for the subdomain and other missing values, writes the docs, adds the GitHub templates and automation, commits in the standard style, sets the GitHub metadata, and points the subdomain. It reports back with a checklist. **It never pushes without your approval.**
+The agent audits the codebase, asks for missing values in one turn, generates docs + runtime `AGENTS.md` / `CLAUDE.md`, wires GitHub security & CI workflows, makes atomic emoji commits locally, and (after push) configures GitHub, Vercel, and GoDaddy DNS. **It never pushes without your approval.**
 
 ---
 
@@ -48,101 +51,57 @@ The agent reads the code, asks for the subdomain and other missing values, write
 
 | Path | Purpose |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | Step-by-step playbook for the coding agent: order of steps, what to ask, safety rules, done-checklist |
-| [`repo-template/`](repo-template) | Every file a repo needs, laid out exactly where it goes (see below) |
-| [`guidelines/commit-style.md`](guidelines/commit-style.md) | Emoji commit format: `<emoji> [#issue] [scope:] <message>` |
-| [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Definition of done, naming conventions, PR and git-safety rules |
-| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Sets description, homepage and topics, enables Dependabot + security reporting, sets the report email secrets |
-| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` to Vercel/Render and creates the GoDaddy CNAME |
-
-### `repo-template/`
-
-It mirrors a repo, so every file goes to the **same path** in your project:
-
-```
-repo-template/
-├── README.md                    project README (recruiter-first)
-├── CONTRIBUTING.md              setup, branches, commit style, PR checklist
-├── SECURITY.md                  private vulnerability reporting
-├── CODE_OF_CONDUCT.md
-├── CHANGELOG.md                 sections map 1:1 to commit emojis
-├── .editorconfig
-├── docs/
-│   ├── PRD.md  ARCHITECTURE.md  DECISIONS.md
-│   └── SETUP.md  DEPLOY.md
-└── .github/
-    ├── PULL_REQUEST_TEMPLATE.md
-    ├── ISSUE_TEMPLATE/          bug_report · feature_request · config
-    ├── FUNDING.yml
-    ├── dependabot.yml
-    └── workflows/
-        ├── ci.yml                       lint · typecheck · build · test, stack auto-detected
-        ├── dependabot-auto-merge.yml    merges dependency PRs once CI is green
-        └── maintenance-report.yml       weekly email report
-```
-
-**No agent needed.** Each template starts with a comment that says where it goes and how to fill it, so you can copy just the files you want:
-
-```powershell
-# everything at once
-Copy-Item -Recurse -Force .\repo-template\* ..\my-app\   # overwrites same-named files, e.g. README.md
-
-# or one file
-Copy-Item .\repo-template\SECURITY.md ..\my-app\
-```
-
-Then replace the `{{PLACEHOLDERS}}` and delete the instruction comments. The `.github/` files mostly work as-is.
+| [`AGENTS.md`](AGENTS.md) | 7-step setup playbook for coding agents |
+| [`repo-template/`](repo-template) | Mirror-layout templates for docs, runtime `AGENTS.md`/`CLAUDE.md`, `.coderabbit.yaml`, `.github/` workflows & community files |
+| [`stack-templates/`](stack-templates) | Conditional stack configs: `vercel.json` security headers, `render.yaml`, Playwright + `@axe-core/playwright` smoke tests |
+| [`guidelines/commit-style.md`](guidelines/commit-style.md) | Mandatory emoji commit format: `<emoji> [#issue] [scope:] <message>` |
+| [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Engineering standards, reusable component layering, PR rules, and git safety |
+| [`guidelines/ui-guidelines.md`](guidelines/ui-guidelines.md) | Anti-AI-slop UI rules, 4-state UI contract, WCAG AA accessibility, and visual checks |
+| [`guidelines/security-guidelines.md`](guidelines/security-guidelines.md) | Boundary validation, auth/IDOR, server secrets, headers, SSRF, and LLM safety |
+| [`guidelines/testing-guidelines.md`](guidelines/testing-guidelines.md) | 4-layer testing pyramid (unit, integration/API, Playwright E2E + a11y, regression) |
+| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Metadata, squash-only merge settings, Secret Scanning + Push Protection, `Protect main` ruleset, labels, and secrets |
+| [`scripts/setup-vercel-project.ps1`](scripts/setup-vercel-project.ps1) | Auto-detects stack/Node version and configures Vercel security, Fluid compute, region, and docs-ignore builds |
+| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` on Vercel/Render and sets/overwrites the GoDaddy CNAME |
 
 ---
 
-## Automatic dependency updates
+## GitHub automation & self-maintenance
 
-Once the `.github/` files are in a repo, it maintains itself:
+Every repo set up with `repo-template/` gets:
+
+- **Security scanning on every push & PR:**
+  - `codeql.yml` — CodeQL SAST (`security-extended,security-and-quality`) for JS/TS and Python (free on public repos)
+  - `secret-scan.yml` — Gitleaks secret detection across git history and PR diffs
+  - `dependency-review.yml` — Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses
+  - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
+- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` / `CLAUDE.md` directly (free on public repos), with optional `ai-review.yml` BYOK fallback for private repos
+- **Quality & release automation:** `ci.yml` (lint, format, typecheck, build, unit/integration, Playwright E2E + artifact upload), `labeler.yml`, `release.yml`, and `CODEOWNERS`
+- **Weekly maintenance loop (IST):**
 
 | When (IST) | What happens |
 |---|---|
-| Monday 06:00 | Dependabot opens update PRs. Minor + patch are grouped into one PR, majors get their own |
-| On each PR | `ci.yml` runs lint, typecheck, build and tests |
-| CI passes | `dependabot-auto-merge.yml` squash-merges the PR |
-| CI fails | The PR stays open with a `needs-review` label and a comment |
-| Monday 10:00 | `maintenance-report.yml` emails what was merged, what's waiting, open security alerts and CI status on `main` |
-
-To hold major versions for manual review, set `AUTO_MERGE_MAJOR: "false"` in the auto-merge workflow. To switch to monthly, see the comments at the top of `dependabot.yml` and `maintenance-report.yml`.
-
----
-
-## Credentials
-
-Scripts read tokens from environment variables. Copy `.env.example` to `.env` in this folder and fill it in:
-
-```env
-GITHUB_TOKEN=     # github.com/settings/tokens → classic, `repo` scope
-VERCEL_TOKEN=     # vercel.com/account/tokens
-RENDER_API_KEY=   # dashboard.render.com → Account → API Keys
-GODADDY_KEY=      # developer.godaddy.com/keys → format KEY:SECRET
-
-# Weekly maintenance report email (set as repo secrets by setup-github-repo.ps1)
-MAIL_USERNAME=    # Gmail address that sends the report
-MAIL_PASSWORD=    # Gmail App Password: myaccount.google.com/apppasswords
-ALERTS_TOKEN=     # optional: fine-grained PAT, "Dependabot alerts: read"
-```
-
-`.env` is gitignored, so your tokens never get committed. Only `.env.example` (key names, no values) is in the repo.
+| Monday 06:00 | Dependabot opens grouped minor/patch PRs and individual major PRs |
+| Monday 10:45 | Weekly scheduled CodeQL scan runs on `main` |
+| On each PR | `ci.yml`, `codeql.yml`, `secret-scan.yml`, `dependency-review.yml`, and `labeler.yml` run |
+| CI passes | `dependabot-auto-merge.yml` squash-merges Dependabot PRs automatically |
+| CI fails | PR stays open with `needs-review` label and comment |
+| Monday 10:00 | `maintenance-report.yml` emails Dependabot, CodeQL, Secret Scanning, and `main` CI summary |
 
 ---
 
-## Running the scripts manually
+## Credentials & manual scripts
+
+Copy `.env.example` to `.env` in this folder (gitignored) and fill in the keys you use:
 
 ```powershell
 .\scripts\setup-github-repo.ps1 -Repo "my-app" `
   -Description "One-line pitch" -Homepage "https://myapp.tanisheesh.in" `
   -Topics "nextjs","typescript","ai"
 
+.\scripts\setup-vercel-project.ps1 -Project "my-app" -RepoPath "..\my-app" -Region "bom1" -IgnoreDocsOnlyBuilds
 .\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Vercel -VercelProject "my-app"
 .\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Render -RenderHost "my-app.onrender.com"
 ```
-
-A missing token makes the script prompt for it. DNS usually propagates in 2–10 minutes.
 
 ---
 
