@@ -1,0 +1,26 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  Render Blueprint starter. Goes to: <repo>/render.yaml (if used)     ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
+services:
+  - type: web
+    name: "{{REPO_NAME}}"
+    runtime: "{{python|node|docker}}"
+    region: singapore
+    plan: free
+    autoDeploy: true
+    healthCheckPath: "{{/api/health}}"
+    buildCommand: "{{e.g. pip install -r requirements.txt}}"
+    startCommand: "{{e.g. uvicorn app.main:app --host 0.0.0.0 --port $PORT}}"
+    envVars:
+      - key: "{{ENV_VAR_NAME}}"
+        sync: false
+
+# ──────────────────────────────────────────────────────────────────────────
+#  Tanish Poddar
+#  Website   https://tanisheesh.in
+#  LinkedIn  https://linkedin.com/in/tanisheesh
+#  GitHub    https://github.com/tanisheesh
+#  Email     hi@tanisheesh.in
+# ──────────────────────────────────────────────────────────────────────────
