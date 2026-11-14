@@ -1,0 +1,88 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  CodeQL SAST scanning. Goes to: <repo>/.github/workflows/codeql.yml  ║
+# ║  Auto-detects JS/TS and Python; free on all public GitHub repos.     ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "15 5 * * 1"   # Monday 05:15 UTC = 10:45 IST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect-languages:
+    if: github.event.repository.private == false || vars.ENABLE_CODEQL == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      languages: ${{ steps.detect.outputs.languages }}
+      has_languages: ${{ steps.detect.outputs.has_languages }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Detect CodeQL languages
+        id: detect
+        run: |
+          langs=()
+          if find . -maxdepth 5 -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' -not -path '*/.next/*' \
+            \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mjs' -o -name '*.cjs' \) -print -quit | grep -q .; then
+            langs+=('"javascript-typescript"')
+          fi
+          if find . -maxdepth 5 -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/.git/*' \
+            -name '*.py' -print -quit | grep -q .; then
+            langs+=('"python"')
+          fi
+
+          if [ "${#langs[@]}" -eq 0 ]; then
+            echo "has_languages=false" >> "$GITHUB_OUTPUT"
+            echo "languages=[]" >> "$GITHUB_OUTPUT"
+          else
+            joined=$(IFS=,; echo "[${langs[*]}]")
+            echo "has_languages=true" >> "$GITHUB_OUTPUT"
+            echo "languages=$joined" >> "$GITHUB_OUTPUT"
+            echo "Detected CodeQL languages: $joined"
+          fi
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    needs: detect-languages
+    if: needs.detect-languages.outputs.has_languages == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJson(needs.detect-languages.outputs.languages) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended,security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+# ──────────────────────────────────────────────────────────────────────────
+#  Tanish Poddar
+#  Website   https://tanisheesh.in
+#  LinkedIn  https://linkedin.com/in/tanisheesh
+#  GitHub    https://github.com/tanisheesh
+#  Email     hi@tanisheesh.in
+# ──────────────────────────────────────────────────────────────────────────

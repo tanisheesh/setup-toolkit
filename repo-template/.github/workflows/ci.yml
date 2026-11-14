@@ -5,16 +5,17 @@
 #
 # Works as-is: it auto-detects the stack in each folder listed in CI_DIRS.
 #   Node / Bun   → installs with the right package manager (from the lockfile),
-#                  then runs the `lint`, `typecheck`, `build`, `test` scripts that exist
+#                  then runs lint, format:check, typecheck, build, test, and
+#                  Playwright E2E tests (when playwright.config.* exists)
 #   Python       → installs from uv.lock / pyproject.toml / requirements.txt,
-#                  byte-compiles everything, runs ruff if configured, pytest if tests exist
+#                  byte-compiles everything, runs ruff / mypy / pytest if present
 #
 # The only things you may need to edit:
 #   1. CI_DIRS:  space-separated folders to check, e.g. ". backend frontend"
 #   2. env:      dummy values for env vars your build reads at build time
 #
-# The job is named `ci`. dependabot-auto-merge.yml waits for it to pass
-# before merging dependency updates, so keep the name.
+# Keep workflow name `CI` and job name `ci` — dependabot-auto-merge.yml
+# and branch rulesets depend on them.
 
 name: CI
 
@@ -35,6 +36,7 @@ env:
   CI_DIRS: "."
   NODE_DEFAULT_VERSION: "22"
   PYTHON_DEFAULT_VERSION: "3.12"
+  RUN_E2E: "true"
   # Build-time env vars: add placeholders here if the build needs them, e.g.
   # DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
   # NEXT_PUBLIC_APP_URL: "http://localhost:3000"
@@ -44,32 +46,40 @@ jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Detect stacks
         id: detect
         run: |
-          node=false; bun=false; pnpm=false; python=false
+          node=false; bun=false; pnpm=false; python=false; e2e=false
+          node_version="$NODE_DEFAULT_VERSION"
+          python_version="$PYTHON_DEFAULT_VERSION"
+
           for d in $CI_DIRS; do
+            [ -d "$d" ] || { echo "::error::CI_DIRS entry '$d' does not exist."; exit 1; }
             [ -f "$d/package.json" ] && node=true
             { [ -f "$d/bun.lockb" ] || [ -f "$d/bun.lock" ]; } && bun=true
             [ -f "$d/pnpm-lock.yaml" ] && pnpm=true
             { [ -f "$d/pyproject.toml" ] || [ -f "$d/requirements.txt" ] || [ -f "$d/setup.py" ]; } && python=true
+            for cfg in playwright.config.ts playwright.config.js playwright.config.mjs playwright.config.mts; do
+              [ -f "$d/$cfg" ] && e2e=true
+            done
+            for f in "$d/.nvmrc" "$d/.node-version"; do
+              [ -f "$f" ] && node_version="$(tr -d 'v \r\n' < "$f")"
+            done
+            [ -f "$d/.python-version" ] && python_version="$(tr -d ' \r\n' < "$d/.python-version")"
           done
-          node_version="$NODE_DEFAULT_VERSION"
-          for f in .nvmrc .node-version; do [ -f "$f" ] && node_version="$(tr -d 'v \n' < "$f")"; done
-          python_version="$PYTHON_DEFAULT_VERSION"
-          [ -f .python-version ] && python_version="$(tr -d ' \n' < .python-version)"
+
           {
-            echo "node=$node"; echo "bun=$bun"; echo "pnpm=$pnpm"; echo "python=$python"
+            echo "node=$node"; echo "bun=$bun"; echo "pnpm=$pnpm"; echo "python=$python"; echo "e2e=$e2e"
             echo "node_version=$node_version"; echo "python_version=$python_version"
           } >> "$GITHUB_OUTPUT"
-          echo "Detected → node=$node bun=$bun pnpm=$pnpm python=$python"
+          echo "Detected → node=$node bun=$bun pnpm=$pnpm python=$python e2e=$e2e"
 
       - if: steps.detect.outputs.node == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ steps.detect.outputs.node_version }}
 
@@ -80,7 +90,7 @@ jobs:
         run: corepack enable
 
       - if: steps.detect.outputs.python == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ steps.detect.outputs.python_version }}
 
@@ -102,29 +112,76 @@ jobs:
             elif [ -f package-lock.json ];            then pm=npm;  npm ci
             else                                           pm=npm;  npm install
             fi
-            for s in lint typecheck type-check build test; do
+
+            for s in lint format:check typecheck type-check build test; do
               if has_script "$s"; then
                 echo "::group::$pm run $s"; $pm run "$s"; echo "::endgroup::"
               fi
             done
+
+            if [ "$RUN_E2E" = "true" ]; then
+              for cfg in playwright.config.ts playwright.config.js playwright.config.mjs playwright.config.mts; do
+                if [ -f "$cfg" ]; then
+                  echo "::group::Playwright E2E ($cfg)"
+                  npx playwright install --with-deps chromium
+                  if has_script "test:e2e"; then
+                    $pm run test:e2e
+                  else
+                    npx playwright test
+                  fi
+                  echo "::endgroup::"
+                  break
+                fi
+              done
+            fi
           }
 
           run_python() {
             PY=""
             python -m pip install --upgrade pip
-            if   [ -f uv.lock ];           then pip install uv && uv sync --all-extras && PY="uv run"
-            elif [ -f pyproject.toml ];    then pip install -e ".[dev]" || pip install -e .
-            elif [ -f requirements.txt ];  then pip install -r requirements.txt
+            if [ -f uv.lock ]; then
+              pip install uv
+              uv sync --all-extras
+              PY="uv run"
+            elif [ -f pyproject.toml ]; then
+              pip install -e ".[dev]" || pip install -e .
+            elif [ -f requirements.txt ]; then
+              pip install -r requirements.txt
             fi
             if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
             echo "::group::compile check"
-            python -m compileall -q -x '(\.venv|venv|node_modules|\.git)/' .
+            $PY python -m compileall -q -x '(\.venv|venv|node_modules|\.git)/' .
             echo "::endgroup::"
-            if [ -f ruff.toml ] || [ -f .ruff.toml ] || grep -qs '\[tool.ruff' pyproject.toml; then
-              echo "::group::ruff"; pip install ruff; ruff check .; echo "::endgroup::"
+
+            if [ -f ruff.toml ] || [ -f .ruff.toml ] || { [ -f pyproject.toml ] && grep -qs '\[tool\.ruff' pyproject.toml; }; then
+              echo "::group::ruff"
+              if [ -n "$PY" ] && $PY ruff --version >/dev/null 2>&1; then
+                $PY ruff check .
+              else
+                pip install ruff && ruff check .
+              fi
+              echo "::endgroup::"
             fi
-            if [ -d tests ] || ls test_*.py */test_*.py >/dev/null 2>&1; then
-              echo "::group::pytest"; pip install pytest; $PY python -m pytest -q; echo "::endgroup::"
+
+            if [ -f pyproject.toml ] && grep -qs '\[tool\.mypy' pyproject.toml; then
+              echo "::group::mypy"
+              if [ -n "$PY" ] && $PY mypy --version >/dev/null 2>&1; then
+                $PY mypy .
+              else
+                pip install mypy && mypy .
+              fi
+              echo "::endgroup::"
+            fi
+
+            if [ -d tests ] || [ -n "$(find . -maxdepth 3 -name 'test_*.py' -not -path './.venv/*' -not -path './venv/*' -print -quit)" ]; then
+              echo "::group::pytest"
+              if [ -n "$PY" ] && $PY python -m pytest --version >/dev/null 2>&1; then
+                $PY python -m pytest -q
+              else
+                pip install pytest && python -m pytest -q
+              fi
+              echo "::endgroup::"
             fi
           }
 
@@ -137,6 +194,15 @@ jobs:
               if [ "$ran" = false ]; then echo "No Node or Python project found in '$d', skipping."; fi
             )
           done
+
+      - name: Upload Playwright report on failure
+        if: failure() && steps.detect.outputs.e2e == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: "**/playwright-report/"
+          if-no-files-found: ignore
+          retention-days: 7
 
 # ──────────────────────────────────────────────────────────────────────────
 #  Tanish Poddar

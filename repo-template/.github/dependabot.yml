@@ -7,9 +7,9 @@
 #   1. Dependabot checks every dependency and opens update PRs.
 #      Minor + patch updates are grouped into ONE PR per ecosystem;
 #      major updates get their own PR each.
-#   2. CI (ci.yml) runs on each PR.
+#   2. CI (ci.yml) + Security checks run on each PR.
 #   3. dependabot-auto-merge.yml merges the PR automatically once CI is green
-#      (majors too, unless you turn that off there).
+#      (majors too, unless you set AUTO_MERGE_MAJOR: "false" there).
 #   4. maintenance-report.yml emails you a summary on Monday 10:00 IST.
 #
 # How to fill: keep `github-actions`, and UNCOMMENT the blocks for the
@@ -28,8 +28,9 @@ updates:
     schedule: { interval: "weekly", day: "monday", time: "06:00", timezone: "Asia/Kolkata" }
     commit-message: { prefix: "👷" }
     groups:
-      actions:
+      actions-minor-and-patch:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Node / Bun / pnpm / yarn: package.json
   # - package-ecosystem: "npm"
