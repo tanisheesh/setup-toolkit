@@ -147,6 +147,7 @@ $basePayload = @{
     directoryListing         = $false
     autoExposeSystemEnvs     = $true
     gitForkProtection        = $true
+    protectedSourcemaps      = $true
     serverlessFunctionRegion = $Region
     gitComments              = @{
         onPullRequest = $true
@@ -161,7 +162,7 @@ if ($IgnoreDocsOnlyBuilds) {
 }
 
 $fullPayload = $basePayload.Clone()
-$fullPayload.protectedSourcemaps = $true
+$fullPayload.Remove("serverlessFunctionRegion")
 $fullPayload.resourceConfig = @{
     fluid                  = $FluidCompute
     functionDefaultRegions = @($Region)
@@ -190,9 +191,10 @@ if (-not $applied) {
 }
 
 if ($applied -and $res) {
+    $outRegion = if ($res.resourceConfig.functionDefaultRegions) { $res.resourceConfig.functionDefaultRegions -join ", " } else { $res.serverlessFunctionRegion }
     Write-Host "    • framework:            $($res.framework)" -ForegroundColor Gray
     Write-Host "    • nodeVersion:          $($res.nodeVersion)" -ForegroundColor Gray
-    Write-Host "    • region:               $($res.serverlessFunctionRegion)" -ForegroundColor Gray
+    Write-Host "    • region:               $outRegion" -ForegroundColor Gray
     Write-Host "    • directoryListing:     $($res.directoryListing)" -ForegroundColor Gray
     Write-Host "    • gitForkProtection:    $($res.gitForkProtection)" -ForegroundColor Gray
     Write-Host "    • protectedSourcemaps:  $($res.protectedSourcemaps)" -ForegroundColor Gray
