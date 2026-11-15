@@ -7,21 +7,30 @@
 
 # {{PROJECT_NAME}} — Product Requirements Document
 
-**Status:** {{Draft / Final}}
-**Owner:** Tanish Poddar
-**One-liner:** {{Same one-liner as README — what it is in one sentence.}}
+| Field | Value |
+|---|---|
+| **Status** | {{Draft / Final / v1.0 Live}} |
+| **Owner** | Tanish Poddar |
+| **Live URL** | [{{LIVE_URL}}]({{LIVE_URL}}) |
+| **One-liner** | {{Same one-liner as README — what it is in one sentence.}} |
 
 ---
 
-## 1. Problem
+## 1. Problem & Quantified Impact
 
 <!--
 What breaks or hurts without this product?
-Be specific — numbers help ("developers spend 30 min/day doing X manually").
-1 short paragraph, no bullets.
+Ground the problem in concrete baseline numbers (time wasted, failure rate,
+manual steps, cost). 1 short paragraph + Before/After comparison table.
 -->
 
 {{...}}
+
+| Dimension | Before (Manual / Baseline) | After (v1 Target) |
+|---|---|---|
+| {{e.g. Time to complete workflow}} | {{e.g. 15–20 min manual copy-paste}} | {{e.g. < 10s automated end-to-end}} |
+| {{e.g. Error / drop-off rate}} | {{e.g. Frequent missed steps / stale data}} | {{e.g. Deterministic validation + zero silent drops}} |
+| {{e.g. Operating cost}} | {{e.g. N/A or existing tool cost}} | {{e.g. $0/mo within free-tier quotas}} |
 
 ---
 
@@ -29,140 +38,137 @@ Be specific — numbers help ("developers spend 30 min/day doing X manually").
 
 <!--
 What must be true for v1 to be "done"?
-Numbered list, each one testable — not vague like "good UX".
+Numbered list, each one measurable or testable — never vague like "good UX".
 -->
 
-1. {{e.g. GitHub OAuth login — no separate signup flow.}}
-2. {{e.g. Pull real data for repos the user selects.}}
-3. {{e.g. Generate AI summary grounded in actual data, not filler.}}
-4. {{e.g. Deployed with a working live demo URL.}}
+1. {{e.g. GitHub OAuth login — authenticated session ready in <= 2 redirects.}}
+2. {{e.g. Sync and persist real repository data with idempotent upserts.}}
+3. {{e.g. Generate structured AI summary grounded in measured inputs (< 1,500 output tokens).}}
+4. {{e.g. Deployed live at {{LIVE_URL}} passing Playwright smoke + WCAG AA a11y checks.}}
 
 ---
 
-## 3. Non-Goals (explicit scope cuts)
+## 3. Non-Goals (Explicit Scope Cuts)
 
 <!--
-What are you deliberately NOT building in v1?
-This section is as important as Goals — it shows you can scope.
-Call out things someone might expect and explain why they're deferred.
+What are you deliberately NOT building in v1, and what trigger would justify building it?
 -->
 
-- **{{Feature X}}** — {{why deferred, what would trigger building it}}
+- **{{Feature X}}** — {{why deferred, and exact trigger to revisit}}
 - **{{Feature Y}}** — {{why deferred}}
 - **{{Feature Z}}** — {{why deferred}}
 
 ---
 
-## 4. Users
+## 4. Users & Personas
 
-<!--
-Who uses this? 1-3 types max. Be specific.
--->
+**Primary:** {{e.g. Individual engineers using the tool daily in their workflow.}}
 
-**Primary:** {{e.g. Individual developers who want their standups written from real commit data.}}
-
-**Secondary:** {{e.g. Recruiters evaluating this as a portfolio piece — it needs to work live on their own data.}}
+**Secondary:** {{e.g. Technical reviewers / recruiters testing the live demo on real or seeded data.}}
 
 ---
 
-## 5. User Stories
+## 5. User Stories & Acceptance Criteria
 
 <!--
-Each story = one thing a user can do end-to-end.
-Format: As a [user type], [action], [outcome/why it matters].
-5-8 stories covers most MVPs.
+Each story pairs a user flow with concrete Given / When / Then acceptance criteria.
 -->
 
-1. *As a {{user type}},* {{action}} so that {{outcome}}.
-2. *As a {{user type}},* {{action}} so that {{outcome}}.
-3. *As a {{user type}},* {{action}} so that {{outcome}}.
-4. *As a {{user type}},* {{action}} so that {{outcome}}.
-5. *As a {{user type}},* {{action}} so that {{outcome}}.
+### Story 1 — {{e.g. Core Onboarding / Auth}}
+*As a {{user type}}, I want to {{action}} so that {{outcome}}.*
+- **Given** {{initial state}}, **When** {{action}}, **Then** {{verifiable outcome + timing/status}}.
+- **Given** {{failure/invalid state}}, **When** {{action}}, **Then** {{safe error state / HTTP status}}.
+
+### Story 2 — {{e.g. Primary Workflow}}
+*As a {{user type}}, I want to {{action}} so that {{outcome}}.*
+- **Given** {{initial state}}, **When** {{action}}, **Then** {{verifiable outcome}}.
+- **Given** {{empty or boundary state}}, **When** {{action}}, **Then** {{expected empty/fallback behavior}}.
+
+### Story 3 — {{e.g. Export / Output / Webhook}}
+*As a {{user type}}, I want to {{action}} so that {{outcome}}.*
+- **Given** {{initial state}}, **When** {{action}}, **Then** {{verifiable outcome}}.
 
 ---
 
 ## 6. Functional Requirements
 
-<!--
-Group by feature area. Each requirement is one testable behaviour.
-Write what the system must DO, not how it does it (that's ARCHITECTURE.md).
--->
+### 6.1 {{Feature Area 1 — e.g. Auth & Session}}
+- {{Testable requirement with exact field/constraint}}
+- {{Testable requirement}}
 
-### 6.1 {{Feature Area — e.g. Auth}}
+### 6.2 {{Feature Area 2 — e.g. Core Engine / API}}
+- {{Testable requirement}}
+- {{Testable requirement}}
 
-- {{Requirement 1}}
-- {{Requirement 2}}
-
-### 6.2 {{Feature Area — e.g. Data Sync}}
-
-- {{Requirement 1}}
-- {{Requirement 2}}
-
-### 6.3 {{Feature Area — e.g. AI Generation}}
-
-- {{Requirement 1}}
-- {{Requirement 2}}
-
-### 6.4 {{Feature Area — e.g. Dashboard}}
-
-- {{Requirement 1}}
-- {{Requirement 2}}
+### 6.3 {{Feature Area 3 — e.g. UI & States}}
+- {{Testable requirement — Loading, Empty, Error, Populated states}}
+- {{Testable requirement}}
 
 ---
 
-## 7. Non-Functional Requirements
+## 7. Edge-Case & Failure Behavior Matrix
 
-<!--
-Performance, security, cost, reliability.
-Each one should be measurable or at least verifiable.
--->
-
-- **Latency:** {{e.g. Webhook ack < 2s; end-to-end review < 5 min for a typical PR.}}
-- **Security:** {{e.g. API keys in env vars only, never committed. Webhook signature verification mandatory.}}
-- **Cost:** {{e.g. Single oversized input must not blow up API spend — hard token cap with graceful fallback.}}
-- **Reliability:** {{e.g. No job silently lost — every task either completes, retries, or lands in dead-letter with a log entry.}}
-- **Accessibility:** {{e.g. Mobile-friendly — primary share channel is WhatsApp.}}
+| Scenario | Expected System Behavior | User Feedback / Status |
+|---|---|---|
+| Empty / first-time state | {{e.g. Render guided empty state with sample action; zero fake data}} | {{UI CTA}} |
+| Invalid or oversized input | {{e.g. Reject at Zod/Pydantic boundary before DB write}} | `400` / inline field error |
+| Unauthenticated / wrong owner (IDOR) | {{e.g. Fail closed before loading resource}} | `401` / `403` |
+| Duplicate submit / retry | {{e.g. Idempotent upsert / debounced submit lock}} | Single record persisted |
+| Upstream API / LLM timeout or 429 | {{e.g. Bounded timeout + retry/degrade to raw stats}} | Calm retry banner / partial view |
+| Mobile viewport (`375px`) | {{e.g. Responsive stack layout, zero horizontal overflow}} | Usable >= 40px touch targets |
 
 ---
 
-## 8. Success Metrics
+## 8. Non-Functional Requirements & Budgets
 
-<!--
-How do you know v1 is working?
-Be honest — "50 signups" is a real metric, "good feedback" is not.
--->
-
-| Metric | Target |
-|---|---|
-| {{e.g. Live demo reliability}} | {{e.g. First-time login → populated dashboard in < 10s}} |
-| {{e.g. Real user signups}} | {{e.g. 50+ from SRM batch share}} |
-| {{e.g. Caught real bugs}} | {{e.g. At least 1 real bug caught during own development}} |
+- **Latency:** {{e.g. API routes < 300ms p95 (non-LLM); LLM streaming/response timeout capped at 30s.}}
+- **Security:** {{e.g. Zod validation on 100% of inputs, server-only secrets, HMAC-SHA256 `timingSafeEqual` webhooks, HTTP security headers.}}
+- **Cost & Spend Ceiling:** {{e.g. Hard input/output token cap (`max_tokens`), per-user rate limit (`X req/min`).}}
+- **Reliability:** {{e.g. Zero silent job drops; idempotent writes; health endpoint `GET /api/health` returning `200`.}}
+- **Accessibility:** {{e.g. WCAG 2.1 AA contrast, keyboard navigation, zero critical/serious `@axe-core/playwright` violations.}}
 
 ---
 
-## 9. Risks & Open Questions
+## 9. Unit Economics & Quota Budget
 
 <!--
-What could go wrong? What haven't you decided yet?
-Be honest — hiding risks here means they become surprises later.
+Compute actual resource & API budget from configured providers/limits.
+Delete rows that don't apply.
 -->
 
-- **{{Risk 1}}** — {{e.g. GitHub API rate limits (5000 req/hr). Mitigated by GraphQL batch queries.}}
-- **{{Risk 2}}** — {{e.g. AI provider rate limits on free tier. Mitigated by on-demand calls only, not per-page-load.}}
-- **{{Open question}}** — {{e.g. Should severity ≥ blocker eventually gate merges via GitHub Check Runs?}}
+| Resource | Free-Tier / Plan Limit | Estimated Usage per 1,000 Actions | Headroom / Scaling Note |
+|---|---|---|---|
+| Compute ({{Vercel / Render}}) | {{e.g. 100 GB-hrs / 750 hrs}} | {{e.g. ~0.2 GB-hrs}} | {{e.g. Docs-only builds ignored}} |
+| Database ({{Neon / Supabase}}) | {{e.g. 500 MB storage · 100 connections}} | {{e.g. ~2 MB}} | {{e.g. Pooled connection string}} |
+| LLM ({{Claude / Groq / Gemini}}) | {{e.g. 30 req/min or $X credit}} | {{e.g. ~800K tokens (~$X)}} | {{e.g. Cached + on-demand only}} |
+| Cache / Rate Limit ({{Upstash}}) | {{e.g. 500K commands/mo}} | {{e.g. ~4K commands}} | {{e.g. TTL-bounded keys}} |
 
 ---
 
-## 10. v2 Candidates
+## 10. Success Metrics & Instrumentation
 
-<!--
-Things you want to build but deliberately cut from v1.
-Not a commitment — just context so future-you knows what was considered.
--->
+| Metric | Target | How Measured |
+|---|---|---|
+| {{e.g. End-to-end activation latency}} | {{e.g. Login → populated view < 10s}} | {{e.g. Route timing logs / Playwright smoke}} |
+| {{e.g. Reliability}} | {{e.g. >= 99% non-5xx on core routes}} | {{e.g. Host logs + uptime monitor}} |
+| {{e.g. Quality / Regression}} | {{e.g. 0 critical/high CodeQL or a11y issues}} | {{e.g. CI + CodeQL + Playwright gates}} |
 
-- {{Feature}} — {{why it's v2 and not v1}}
-- {{Feature}} — {{why it's v2 and not v1}}
-- {{Feature}} — {{why it's v2 and not v1}}
+---
+
+## 11. Risks, Assumptions & Open Questions
+
+| Item | Impact | Mitigation / Status |
+|---|---|---|
+| **{{Risk 1 — e.g. Upstream rate limits}}** | {{e.g. High}} | {{e.g. Cached responses + per-user rate limiter + backoff}} |
+| **{{Risk 2 — e.g. Cold starts on free tier}}** | {{e.g. Medium}} | {{e.g. Health ping / graceful loading skeleton}} |
+| **{{Open question}}** | {{e.g. Low}} | {{e.g. Deferred until v2 demand}} |
+
+---
+
+## 12. v2 Candidates
+
+- **{{Candidate 1}}** — {{why deferred from v1, expected scope}}
+- **{{Candidate 2}}** — {{why deferred from v1, expected scope}}
 
 ---
 

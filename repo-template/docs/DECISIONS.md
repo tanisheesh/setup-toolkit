@@ -8,81 +8,85 @@
 # Engineering Decisions — {{PROJECT_NAME}}
 
 <!-- PURPOSE OF THIS FILE
-     This is not user documentation. This is for technical interviewers
-     and senior engineers who want to understand WHY the system is built
-     the way it is. Every entry should answer a question an interviewer
-     might ask. If you can't explain the tradeoff, the decision doesn't
-     belong here yet.
+     Architecture Decision Records (ADRs) for senior engineers and interviewers.
+     Every entry must reflect a real decision in the codebase, with concrete
+     option comparisons, quantitative reasoning, tradeoffs, and reversal triggers.
 -->
 
 ---
 
-## Decision 1 — {{SHORT TITLE e.g. "Why BullMQ over a simple cron job"}}
+## ADR-01 — {{SHORT TITLE e.g. "Deterministic scoring before LLM summarization"}}
 
-**Context:** {{1-2 sentences — what problem were you solving, what were the options?}}
+**Context:** {{1-2 sentences — what problem or constraint forced a choice?}}
 
-**Decision:** {{What you chose.}}
+### Options Considered
 
-**Reason:** {{Why. Be specific — performance numbers, cost, constraints, failure modes you wanted to avoid.}}
+| Option | Latency | Monthly Cost | Ops Complexity | Verdict |
+|---|---|---|---|---|
+| **{{Chosen Option}}** | {{e.g. < 50ms / 2s}} | {{e.g. $0 / ~$X}} | {{e.g. Low}} | ✅ **Chosen** |
+| {{Alternative A}} | {{e.g. 5–10s}} | {{e.g. ~$Y}} | {{e.g. Medium}} | ❌ Rejected |
+| {{Alternative B}} | {{e.g. < 20ms}} | {{e.g. $Z}} | {{e.g. High}} | ❌ Rejected |
 
-**Tradeoff:** {{What you gave up by making this choice. Every real decision has a cost.}}
+**Decision & Reason:** {{Why the chosen option won — cite real constraints, numbers, failure modes avoided.}}
 
----
+**Tradeoff Accepted:** {{What you explicitly gave up.}}
 
-## Decision 2 — {{SHORT TITLE}}
-
-**Context:** {{...}}
-
-**Decision:** {{...}}
-
-**Reason:** {{...}}
-
-**Tradeoff:** {{...}}
+**Reversal Trigger:** {{e.g. "Revisit when daily volume exceeds 10,000 jobs or p95 exceeds 5s — migrate to async BullMQ worker."}}
 
 ---
 
-## Decision 3 — {{SHORT TITLE}}
+## ADR-02 — {{SHORT TITLE}}
 
 **Context:** {{...}}
 
-**Decision:** {{...}}
+### Options Considered
 
-**Reason:** {{...}}
+| Option | Latency | Monthly Cost | Ops Complexity | Verdict |
+|---|---|---|---|---|
+| **{{Chosen Option}}** | {{...}} | {{...}} | {{...}} | ✅ **Chosen** |
+| {{Alternative A}} | {{...}} | {{...}} | {{...}} | ❌ Rejected |
 
-**Tradeoff:** {{...}}
+**Decision & Reason:** {{...}}
+
+**Tradeoff Accepted:** {{...}}
+
+**Reversal Trigger:** {{...}}
 
 ---
 
-## Decision 4 — {{SHORT TITLE}}
+## ADR-03 — {{SHORT TITLE}}
 
 **Context:** {{...}}
 
-**Decision:** {{...}}
+### Options Considered
 
-**Reason:** {{...}}
+| Option | Latency | Monthly Cost | Ops Complexity | Verdict |
+|---|---|---|---|---|
+| **{{Chosen Option}}** | {{...}} | {{...}} | {{...}} | ✅ **Chosen** |
+| {{Alternative A}} | {{...}} | {{...}} | {{...}} | ❌ Rejected |
 
-**Tradeoff:** {{...}}
+**Decision & Reason:** {{...}}
+
+**Tradeoff Accepted:** {{...}}
+
+**Reversal Trigger:** {{...}}
 
 ---
 
 ## What I'd do differently in v2
 
-<!-- Honest self-reflection. Shows maturity. Interviewers respect this. -->
-
-- **{{Thing 1}}** — {{why you'd change it}}
-- **{{Thing 2}}** — {{why you'd change it}}
-- **{{Thing 3}}** — {{why you'd change it}}
+- **{{Thing 1}}** — {{concrete reason + what unlocks it}}
+- **{{Thing 2}}** — {{concrete reason + what unlocks it}}
+- **{{Thing 3}}** — {{concrete reason + what unlocks it}}
 
 ---
 
-## Explicit non-decisions (deferred to v2)
+## Explicit Non-Decisions (Deferred to v2)
 
-<!-- Things you consciously chose NOT to build in v1, and why. -->
-
-| Feature | Why deferred |
-|---|---|
-| {{e.g. Multi-tenant support}} | {{e.g. Single-user scope sufficient for MVP; would require per-user rate limiting and billing}} |
-| {{e.g. Real-time sync via webhooks}} | {{e.g. On-demand sync is simpler to reason about; real-time adds complexity without clear user benefit at this scale}} |
+| Feature | Why Deferred | Trigger to Build |
+|---|---|---|
+| {{e.g. Multi-tenant teams/billing}} | {{e.g. Single-user scope ships faster without RBAC/Stripe overhead}} | {{e.g. > 100 active weekly org requests}} |
+| {{e.g. Real-time WebSocket stream}} | {{e.g. Polling / on-demand refresh suffices for current latency budget}} | {{e.g. Sub-second collaborative edits needed}} |
 
 ---
 

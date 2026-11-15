@@ -10,16 +10,16 @@
   ==========================================
   Instructions (delete this block before publishing):
 
-  1. Replace every {{PLACEHOLDER}} with real values.
+  1. Replace every {{PLACEHOLDER}} with real values grounded in the code.
   2. For LOGO: use an SVG icon from lucide.dev or heroicons.com,
      pick a color that matches your project vibe, paste inline.
   3. For BADGES: replace each href and img src slug.
-     Badge generator → https://shields.io
-     Stack badge format → https://img.shields.io/badge/<label>-<color>?logo=<logo-slug>
-     Logo slugs → https://simpleicons.org
-  4. Delete any section that doesn't apply to your project.
-  5. Keep the file under ~120 lines in the rendered view — recruiters
-     scroll for 8 seconds.
+     Keep CI + CodeQL + Live Demo + GPL-3.0 + applicable stack badges.
+  4. Delete any section that doesn't apply (e.g. Demo if no video yet,
+     By the Numbers if no verified numbers, Traction if zero users).
+     NEVER include a Quick Start / local install guide here — keep that
+     in docs/SETUP.md and end-user API/CLI guides in docs/USAGE.md.
+  5. Keep the file crisp (~130-160 rendered lines max).
 -->
 
 <p align="center">
@@ -41,6 +41,12 @@
   <!-- LIVE DEMO — most important link, always first -->
   <a href="{{LIVE_URL}}">
     <img src="https://img.shields.io/badge/live_demo-visit-{{BRAND_COLOR_NO_HASH}}?style=flat-square" alt="Live Demo">
+  </a>
+  <a href="https://github.com/tanisheesh/{{REPO_NAME}}/actions/workflows/ci.yml">
+    <img src="https://github.com/tanisheesh/{{REPO_NAME}}/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+  <a href="https://github.com/tanisheesh/{{REPO_NAME}}/actions/workflows/codeql.yml">
+    <img src="https://github.com/tanisheesh/{{REPO_NAME}}/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
   </a>
   <!-- TECH STACK BADGES — pick what applies, delete the rest -->
   <img src="https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js" alt="Next.js">
@@ -72,6 +78,15 @@ it like a product pitch, not a feature list.}}
 
 ---
 
+## Demo
+
+<!-- Optional: embed a Remotion-rendered promo MP4 (drag-drop on GitHub or raw URL)
+     or terminal/walkthrough GIF. Delete this section if no video exists yet. -->
+
+{{VIDEO_OR_GIF_EMBED}}
+
+---
+
 ## What you get
 
 <!-- Keep this tight — 3 to 5 features max, each one line -->
@@ -83,41 +98,52 @@ it like a product pitch, not a feature list.}}
 
 ---
 
+## By the numbers
+
+<!-- Strictly real, verifiable numbers from code, configs, tests, or benchmarks.
+     Delete rows you haven't measured; delete the whole section if none exist. -->
+
+| Metric | Value | Source |
+|---|---|---|
+| {{e.g. API timeout / latency budget}} | {{e.g. < 250ms p95 / 30s LLM hard cap}} | {{e.g. `vercel.json` / benchmark}} |
+| {{e.g. Rate limit}} | {{e.g. 30 req/min per user}} | {{e.g. `src/lib/ratelimit.ts`}} |
+| {{e.g. Automated test suite}} | {{e.g. 42 unit + 8 Playwright E2E + a11y checks}} | {{e.g. `tests/`}} |
+| {{e.g. Payload / token cap}} | {{e.g. 4,000 input / 1,500 output tokens max}} | {{e.g. `src/lib/ai.ts`}} |
+
+---
+
 ## Stack
 
-<!-- One line per layer — label on the left, tech on the right -->
+<!-- One line per layer — label on the left, tech + exact version on the right -->
 
 | Layer | Tech |
 |---|---|
-| Frontend | {{e.g. Next.js 16 · Tailwind CSS · Recharts}} |
-| Backend | {{e.g. Node.js · Express · BullMQ}} |
+| Frontend | {{e.g. Next.js 16 · Tailwind CSS 4 · Recharts}} |
+| Backend | {{e.g. Node.js 22 · Express · BullMQ}} |
 | Database | {{e.g. PostgreSQL · Prisma · TimescaleDB}} |
-| Auth | {{e.g. Clerk · Auth.js · Supabase Auth}} |
+| Auth | {{e.g. Clerk · Auth.js v5 · Supabase Auth}} |
 | AI | {{e.g. Claude API · Groq · Llama 3.3-70B}} |
-| Infra | {{e.g. Vercel · Railway · AWS Lambda · Docker}} |
+| Infra | {{e.g. Vercel (bom1) · Render · Upstash Redis · Docker}} |
 
 ---
 
 ## Engineering Decisions
 
 <!-- THIS SECTION IS YOUR INTERVIEW DIFFERENTIATOR.
-     Write 3-5 real decisions you made and why.
+     Write 3-5 real decisions you made and why, citing concrete tradeoffs.
      Format: bold question → 1-2 sentence answer. -->
 
 **Why {{TECH_A}} over {{TECH_B}}?**
-{{Honest reason — performance, cost, constraints, tradeoffs.}}
+{{Honest reason — latency numbers, monthly cost, constraints, tradeoffs.}}
 
 **Why {{DESIGN_DECISION}}?**
-{{e.g. "Burnout score is calculated deterministically, not by AI —
-so every score is auditable and traceable to raw commit data."}}
+{{e.g. "Burnout score is calculated deterministically, not by AI — so every score is auditable and traceable to raw commit data."}}
 
 **Why {{ARCHITECTURE_CHOICE}}?**
-{{e.g. "Z-score anomaly detection runs before the LLM — the model
-only receives structured findings, never raw telemetry."}}
+{{e.g. "Z-score anomaly detection runs before the LLM — the model receives only structured findings (< 800 tokens), never raw telemetry."}}
 
 **What would you do differently in v2?**
-{{Honest answer — shows self-awareness. e.g. "Add nonce-based CSP
-instead of unsafe-inline, which Next.js hydration currently requires."}}
+{{Honest answer — shows self-awareness and clear threshold for change.}}
 
 ---
 
@@ -139,15 +165,15 @@ instead of unsafe-inline, which Next.js hydration currently requires."}}
 
 | Document | Description |
 |---|---|
-| [PRD](docs/PRD.md) | Product requirements — goals, user stories, non-goals |
-| [Architecture](docs/ARCHITECTURE.md) | System design, data flow, component breakdown |
-| [Decisions](docs/DECISIONS.md) | Every major technical decision and why |
-| [Setup](docs/SETUP.md) | Local dev setup and env vars |
-| [Deploy](docs/DEPLOY.md) | Production deployment, domains, rollback |
-| [Contributing](CONTRIBUTING.md) | How to propose changes |
-| [Changelog](CHANGELOG.md) | What changed in each release |
-| [Security](SECURITY.md) | How to report a vulnerability |
-
+| [PRD](docs/PRD.md) | Product requirements — quantified impact, acceptance criteria, edge cases, unit economics |
+| [Architecture](docs/ARCHITECTURE.md) | System topology (Mermaid), API contracts, schema/indexes, caching, scale ceilings |
+| [Decisions](docs/DECISIONS.md) | Technical ADRs — comparison matrices, tradeoffs, and reversal triggers |
+| [Usage](docs/USAGE.md) | End-user CLI / SDK / API reference and examples *(keep only if applicable)* |
+| [Setup](docs/SETUP.md) | Local dev onboarding, env var matrix, seed data, and troubleshooting |
+| [Deploy](docs/DEPLOY.md) | Production topology, zero-downtime migrations, smoke checks, and incident runbooks |
+| [Contributing](CONTRIBUTING.md) | Branching, emoji commit style, and PR checklist |
+| [Changelog](CHANGELOG.md) | Release history mapped to commit history |
+| [Security](SECURITY.md) | Vulnerability reporting policy and security scope |
 
 ---
 

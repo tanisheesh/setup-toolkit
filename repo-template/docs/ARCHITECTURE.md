@@ -9,225 +9,196 @@
 
 <!--
 Companion to PRD.md.
-PRD says WHAT the system does. This says HOW.
-Audience: an engineer who needs to understand the system well
-enough to build it, debug it, or extend it.
-No marketing language here — be precise.
+Audience: a senior engineer who needs to build, debug, scale, or audit
+the system from internals alone. Replace every {{PLACEHOLDER}} with real
+facts, exact versions, and code-verified limits. Delete unused sections.
 -->
 
 ---
 
-## 1. Stack
+## 1. Stack & Runtime Versions
 
-<!--
-One line per layer. Be specific about versions where it matters.
--->
-
-| Layer | Tech |
-|---|---|
-| Framework | {{e.g. Next.js 16 (App Router, TypeScript)}} |
-| Auth | {{e.g. Clerk / Auth.js v5 with GitHub OAuth}} |
-| Database | {{e.g. Supabase Postgres (managed) / Neon Postgres (serverless)}} |
-| ORM | {{e.g. Prisma / asyncpg / Drizzle}} |
-| Queue | {{e.g. BullMQ + Redis}} |
-| AI | {{e.g. Anthropic Claude API / Groq (Llama 3.3-70B)}} |
-| Styling | {{e.g. Tailwind CSS 4}} |
-| Charts | {{e.g. Recharts / Plotly}} |
-| Hosting | {{e.g. Vercel / Railway / Render}} |
+| Layer | Technology & Exact Version | Runtime / Region / Notes |
+|---|---|---|
+| Framework | {{e.g. Next.js 16 (App Router) · TypeScript 5.x}} | {{e.g. Node 22.x · Vercel `bom1`}} |
+| UI & Styling | {{e.g. React 19 · Tailwind CSS 4 · lucide-react}} | {{e.g. CSS var tokens, WCAG AA}} |
+| Auth | {{e.g. Auth.js v5 / Clerk}} | {{e.g. JWT / DB sessions, HTTP-only cookies}} |
+| Database & ORM | {{e.g. PostgreSQL 16 (Neon) · Prisma 6}} | {{e.g. Pooled connection string, max 10 conns}} |
+| Cache / Queue | {{e.g. Upstash Redis / BullMQ}} | {{e.g. TTL 300s / 3 retries w/ exp backoff}} |
+| AI / LLM | {{e.g. Anthropic Claude Sonnet / Groq Llama 3.3-70B}} | {{e.g. 30s timeout, 1,500 output token cap}} |
+| Testing & Security | {{e.g. Vitest · Playwright · axe-core · CodeQL · Gitleaks}} | {{e.g. Enforced on every PR via GitHub Actions}} |
 
 ---
 
-## 2. Components
+## 2. System Topology & Components
 
-<!--
-What are the major pieces of the system?
-One paragraph per component — what it is, what it does, what it doesn't do.
--->
-
+```mermaid
+flowchart LR
+  Client[Browser / Client] -->|HTTPS + Auth| Edge[App / API Layer]
+  Edge -->|Validate Zod/Pydantic| Service[Domain Services]
+  Service -->|Read/Write| DB[(Primary Database)]
+  Service -->|Cache / Rate Limit| Cache[(Redis / Cache)]
+  Service -->|Bounded Request| External[External / LLM APIs]
 ```
+
+```text
 src/
-  {{component_1}}/    {{one-line description}}
-  {{component_2}}/    {{one-line description}}
-  {{component_3}}/    {{one-line description}}
-  {{component_4}}/    {{one-line description}}
-  {{component_5}}/    {{one-line description}}
+  {{app_or_routes}}/     {{thin route handlers & UI pages — input validation -> service call}}
+  {{components_ui}}/     {{pure domain-agnostic UI primitives (zero fetch/business logic)}}
+  {{components_feat}}/   {{feature UI composed from ui/ primitives}}
+  {{lib_or_server}}/     {{business logic, Zod/Pydantic schemas, DB/API clients}}
+  {{hooks_or_workers}}/  {{reusable hooks / background workers}}
 ```
 
-### {{Component 1 — e.g. Webhook Receiver}}
+### {{Component 1 — e.g. API / Route Boundary}}
+{{What triggers it, what it validates, what it writes/calls, and what it explicitly does NOT do.}}
 
-{{What it does. What triggers it. What it produces. What it explicitly does NOT do.
-e.g. "Receives GitHub PR events, verifies HMAC signature, enqueues a job, returns 200.
-Does not perform any review work inline — that happens in the worker."}}
+### {{Component 2 — e.g. Core Processing / Domain Engine}}
+{{Exact responsibilities, invariants, and boundaries.}}
 
-### {{Component 2}}
-
-{{...}}
-
-### {{Component 3}}
-
-{{...}}
+### {{Component 3 — e.g. Background Worker / Sync Pipeline}}
+{{Concurrency, retry semantics, and failure isolation.}}
 
 ---
 
-## 3. Data Flow
+## 3. End-to-End Request Flow
 
-<!--
-Walk through the main happy path end-to-end, numbered steps.
-This is the most important section for understanding the system quickly.
--->
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant App as Client / UI
+  participant API as API Route
+  participant Auth as Auth & Rate Limit
+  participant DB as Database
+  participant Ext as External / LLM
 
+  U->>App: Triggers primary action
+  App->>API: POST /api/{{endpoint}} (JSON payload)
+  API->>Auth: Verify session + ownership + rate limit
+  API->>API: Validate payload with Zod/Pydantic
+  API->>DB: Read / check idempotency
+  API->>Ext: Bounded external call (timeout + token cap)
+  Ext-->>API: Structured response (validated)
+  API->>DB: Transactional upsert
+  API-->>App: 200 OK + typed JSON
+  App-->>U: Populated state rendered
 ```
-{{Draw an ASCII diagram of the main flow}}
 
-Example:
-
-[Browser] --GitHub OAuth--> [Auth] --token in session-->
-    [User clicks Sync] --> POST /api/sync
-        --> Octokit pulls commits/PRs from GitHub
-        --> normalize + upsert into Postgres
-        --> burnout module recomputes score
-    [Dashboard renders] <-- reads from DB
-```
-
-1. {{Step 1 — what triggers the flow}}
-2. {{Step 2}}
-3. {{Step 3}}
-4. {{Step 4}}
-5. {{Step 5 — what the user sees at the end}}
+1. **Trigger:** {{Step 1}}
+2. **Validation & Auth:** {{Step 2}}
+3. **Core Execution:** {{Step 3}}
+4. **Persistence:** {{Step 4}}
+5. **Response & UI State:** {{Step 5}}
 
 ---
 
-## 4. Database Schema
+## 4. Database Schema & Indexing
 
-<!--
-List your models/tables with key columns.
-Don't copy-paste the full schema — describe the shape and relationships.
-Call out indexes on hot query paths.
--->
+```mermaid
+erDiagram
+  {{USER}} ||--o{ {{RESOURCE}} : owns
+  {{RESOURCE}} ||--o{ {{CHILD}} : has
+```
 
-- `{{Model 1}}` — {{key columns and what they store}}
-- `{{Model 2}}` — {{key columns and what they store}}
-- `{{Model 3}}` — {{key columns and what they store}}
-- `{{Model 4}}` — {{key columns and what they store}}
+| Model / Table | Key Columns & Types | Constraints / Relations | Purpose |
+|---|---|---|---|
+| `{{User}}` | `id (uuid PK)`, `email (text unique)` | Cascade or restrict policy | {{Stores account identity}} |
+| `{{Resource}}` | `id (uuid PK)`, `userId (FK)`, `status (enum)`, `createdAt` | `FK userId -> User(id) ON DELETE CASCADE` | {{Core domain entity}} |
+| `{{AuditOrChild}}` | `id (uuid PK)`, `resourceId (FK)`, `payload (jsonb)` | Unique composite `(resourceId, externalId)` | {{Idempotency / child rows}} |
 
-**Indexes:** `{{table(col1, col2)}}` — {{why this index exists / what query it serves}}
+**Hot-Path Indexes:**
+- `{{table(col1, col2)}}` — {{serves `WHERE col1 = ? ORDER BY col2 DESC` dashboard query without seq scan}}.
+- `{{table(unique_key)}}` — {{enforces idempotency on duplicate webhook/sync retries}}.
 
 ---
 
-## 5. AI / LLM Design
+## 5. Caching, State & Concurrency Control
 
-<!--
-Include this section if your project uses an LLM.
-This is where interviewers look to see if you understand prompt engineering
-and LLM failure modes.
--->
+- **Caching strategy:** {{e.g. Redis cache with 300s TTL on read-heavy summaries, or Next.js `revalidateTag` invalidated on mutation; "none — direct DB reads" if uncached}}.
+- **Idempotency & duplicate prevention:** {{e.g. Unique constraint on `(provider, deliveryId)` / upsert keyed on natural ID; UI submit disabled while pending}}.
+- **Concurrency & transactions:** {{e.g. Prisma `$transaction` for multi-table balance/order updates; optimistic concurrency or atomic `UPDATE ... WHERE`}}.
 
-### Input
+---
 
-{{What goes into the model — structured JSON, raw text, diffs?
-Be explicit. e.g. "Structured JSON of commit titles and PR states — never raw diffs or code."}}
+## 6. AI / LLM Design
 
-### System prompt strategy
+<!-- Include ONLY if the project calls an LLM. Delete this whole section otherwise. -->
 
-{{What does the system prompt instruct the model to do?
-What does it explicitly forbid? e.g. "Restricted to 3 finding categories only.
-Instructed not to invent issues to appear thorough."}}
+### Models & Token Budgets
+| Task | Provider & Model | Max Input | Max Output | Timeout | Est. Cost / Call |
+|---|---|---|---|---|---|
+| {{e.g. Primary inference}} | {{e.g. Claude / Groq}} | {{e.g. 4,000 tokens}} | {{e.g. 1,500 tokens}} | {{e.g. 30s}} | {{e.g. ~$0.002}} |
 
-### Response schema
+### Input & Pre-Processing
+{{What deterministic filtering/chunking runs BEFORE the LLM? Never send raw unbounded blobs if pre-filtered.}}
 
+### System Prompt & Injection Defense
+{{How system instructions are separated from untrusted user/external data (XML/structural delimiters), strict output rules, and explicit prohibitions against inventing findings.}}
+
+### Response Schema
 ```jsonc
 {
-  // Paste your expected JSON schema here
   "{{field}}": "{{type}}",
-  "{{field}}": [{ "{{key}}": "{{type}}" }]
+  "{{items}}": [{ "{{key}}": "{{type}}" }]
 }
 ```
 
-### Validation
-
-{{How do you handle a malformed response?
-e.g. "Validated against Zod schema before writing to DB.
-One retry on malformed output, then graceful error — attempt is still saved."}}
-
-### Failure handling
-
-{{What happens when the AI provider is down or slow?
-e.g. "Groq call has 30s timeout. On failure, insights panel degrades to
-raw statistics — the feature is 'unformatted', not 'broken'."}}
+### Validation & Graceful Degradation
+- **Schema check:** {{e.g. Validated via Zod `.safeParse()`; max 1 repair/retry attempt.}}
+- **Provider down / malformed output:** {{e.g. Degrades gracefully to deterministic stats/error banner — core app remains usable.}}
 
 ---
 
-## 6. API Routes
+## 7. API Contracts
 
-<!--
-List your main routes with method and one-line description.
-Not every route — just the ones that matter for understanding the system.
--->
+| Method | Route | Auth & Ownership | Rate Limit | Request / Query | Responses (`2xx` / `4xx` / `5xx`) |
+|---|---|---|---|---|---|
+| `GET` | `/api/health` | Public | None / 60/min | `—` | `200 { ok, db }` · `503` if DB unreachable |
+| `GET` | `{{/api/items}}` | Session (`userId`) | {{e.g. 60/min}} | `?cursor=&limit=20` (max 50) | `200 { items, nextCursor }` · `401` |
+| `POST` | `{{/api/items}}` | Session (`userId`) | {{e.g. 20/min}} | Zod schema (`max 10KB`) | `201 { item }` · `400` · `401` · `429` |
+| `DELETE` | `{{/api/items/[id]}}` | Session + `where: { id, userId }` | {{e.g. 20/min}} | Path `id` (UUID) | `200` · `401` · `403`/`404` |
+| `POST` | `{{/api/webhooks/...}}` | HMAC-SHA256 raw body | IP burst guard | Raw JSON + signature header | `200` · `401` invalid sig |
 
-| Method | Route | Description |
+---
+
+## 8. Security Controls
+
+- **Secrets & config:** {{e.g. Startup env validation via Zod/Pydantic; zero `NEXT_PUBLIC_` / `VITE_` secrets; production secrets encrypted on host.}}
+- **Auth & IDOR protection:** {{e.g. Every read/write filters by authenticated `session.userId`; fails closed with `401`/`403`.}}
+- **Input & mass-assignment safety:** {{e.g. Zod/Pydantic allowlisted DTOs at every boundary; parameterized ORM queries only.}}
+- **Webhooks & SSRF:** {{e.g. `crypto.timingSafeEqual` on raw body HMAC-SHA256; outbound URL fetch allowlists HTTPS and blocks private IP ranges (`127.0.0.0/8`, `10.0.0.0/8`, `169.254.0.0/16`).}}
+- **HTTP headers (`vercel.json` / `next.config`):** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Strict-Transport-Security`.
+
+---
+
+## 9. Error Handling, Reliability & Observability
+
+| Failure Mode | System Behavior | Logged / Alerted |
 |---|---|---|
-| `POST` | `{{/api/sync}}` | {{e.g. Triggers GitHub pull + burnout recompute for signed-in user}} |
-| `POST` | `{{/api/evaluate}}` | {{e.g. Calls Claude to score an interview answer, saves result}} |
-| `GET` | `{{/api/repos}}` | {{e.g. Lists synced/available repos for the user}} |
-| `POST` | `{{/webhooks/github}}` | {{e.g. Receives PR events, verifies HMAC, enqueues review job}} |
+| Invalid client input | `400` with field-level Zod issues; zero DB side-effects | Structured warn |
+| External / LLM API down or `429` | Bounded timeout (`{{30s}}`), max `{{2}}` backoff retries, graceful fallback | Error log w/ request ID |
+| DB transient failure | Idempotent upsert safe to retry; `503` returned cleanly | Error log |
+| Side-effect (email/analytics) fails | Isolated `try/catch` — never breaks primary user transaction | Warn log |
+| Invalid webhook signature | `401` returned immediately before JSON parsing or queueing | Security warn log |
 
 ---
 
-## 7. Security
+## 10. Performance Budgets & Scale Ceilings
 
-<!--
-Concrete decisions, not vague claims.
-"Secure" means nothing. "AES-256-GCM with random 12-byte IV, key in env var" means something.
--->
-
-- **{{Secrets}}:** {{e.g. All API keys in env vars only — .env.local gitignored, production in Vercel encrypted env vars. Never logged.}}
-- **{{Auth tokens}}:** {{e.g. GitHub access tokens encrypted with AES-256-GCM before DB storage. PrismaAdapter plaintext copy nullified immediately after OAuth.}}
-- **{{Webhook verification}}:** {{e.g. HMAC-SHA256 with timingSafeEqual — mandatory, not optional. Returns 401 before touching payload on mismatch.}}
-- **{{API key exposure}}:** {{e.g. LLM API key accessed only in server routes — no NEXT_PUBLIC_ prefix, never reaches the browser.}}
-- **{{Input validation}}:** {{e.g. All user inputs validated with Zod at the API boundary before any DB write.}}
+| Parameter / Limit | Current Configured Value | What Breaks at 10x / 100x Load | Next Scaling Step |
+|---|---|---|---|
+| Function / request timeout | {{e.g. 30s (`vercel.json` / Fluid)}} | {{e.g. Long batch jobs > 30s time out}} | {{e.g. Move batch work to async queue + worker}} |
+| DB connection pool | {{e.g. 10 pooled connections}} | {{e.g. Exhaustion under burst traffic}} | {{e.g. Transaction pooling (PgBouncer / Neon pooler) + read cache}} |
+| Pagination / payload cap | {{e.g. Max 50 rows/page · 1MB body}} | {{e.g. Offset pagination slows at > 100K rows}} | {{e.g. Cursor-based keyset pagination (`(createdAt, id)`)}} |
+| External / LLM rate limit | {{e.g. 30 req/min free tier}} | {{e.g. Concurrent user spikes hit `429`}} | {{e.g. Semantic/Redis cache + queue + paid tier}} |
 
 ---
 
-## 8. Error Handling & Reliability
+## 11. Explicit Scope Cuts
 
-<!--
-How does the system behave when things go wrong?
-Cover the main failure modes.
--->
-
-| Failure | Behaviour |
-|---|---|
-| {{e.g. LLM API down}} | {{e.g. 3 retries with exponential backoff, then dead-letter with log entry}} |
-| {{e.g. Email send fails}} | {{e.g. Isolated try/catch — email failure cannot mark job failed or trigger retry}} |
-| {{e.g. DB write fails}} | {{e.g. Job retried — upsert is idempotent so retry is safe}} |
-| {{e.g. Invalid webhook}} | {{e.g. 401 returned immediately — job never enqueued}} |
-
----
-
-## 9. Deployment
-
-<!--
-How does it run in production?
-Just the facts — what services, what triggers deploys, what runs migrations.
--->
-
-1. {{e.g. Vercel project linked to GitHub repo — auto-deploy on push to main.}}
-2. {{e.g. Neon Postgres — pooled connection string for serverless compatibility.}}
-3. {{e.g. prisma migrate deploy runs as part of Vercel build step.}}
-4. {{e.g. Env vars set in Vercel project dashboard — DATABASE_URL, GITHUB_ID, GROQ_API_KEY, etc.}}
-
----
-
-## 10. Explicit Scope Cuts
-
-<!--
-What did you decide NOT to build, and why?
-Carried over from PRD but recorded here so it's not rediscovered mid-build.
--->
-
-- **{{Feature}}** — {{e.g. "Jira/Linear integration deferred to v2 — GitHub-only keeps the data model simple and ships faster."}}
-- **{{Feature}}** — {{...}}
-- **{{Feature}}** — {{...}}
+- **{{Feature}}** — {{why deliberately excluded from v1}}
+- **{{Feature}}** — {{why deliberately excluded from v1}}
 
 ---
 
