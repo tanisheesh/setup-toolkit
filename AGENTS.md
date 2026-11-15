@@ -176,7 +176,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 - **Render service without `render.yaml`:** optionally copy and fill `stack-templates/render.yaml` if the user manages infra via Blueprint.
 - **Web frontend without E2E tests:** propose/add `stack-templates/playwright.config.ts` → `<repo>/playwright.config.ts` and `stack-templates/smoke.spec.ts` → `<repo>/tests/e2e/smoke.spec.ts` (replacing `webServer.command` and checking dependencies `@playwright/test` + `@axe-core/playwright`).
 
-**Before committing, make CI pass locally:** run the exact lint, format, typecheck, build, and test commands `ci.yml` would run. If an existing check fails, report it honestly — never "fix" it by deleting tests or checks.
+**Before committing, make CI pass locally:** run the exact lint, format, typecheck, build, and test commands `ci.yml` would run. If `coderabbit` CLI is installed locally (`coderabbit --version`), optionally run `coderabbit review --agent --uncommitted` (or `--base main`) before opening a PR. If an existing check fails, report it honestly — never "fix" it by deleting tests or checks.
 
 **Don't add a `LICENSE` file.** The user manages licensing (always GPL-3.0).
 

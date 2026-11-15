@@ -87,6 +87,12 @@ Follow these rules strictly on every file you create or modify in **{{PROJECT_NA
 {{TEST_CMD}}        # e.g. npm test / pytest -q
 ```
 
+If `coderabbit` CLI is installed locally, optionally run a pre-PR review on your changes:
+
+```bash
+coderabbit review --agent --uncommitted   # or --base main --gate major
+```
+
 ---
 
 ## 6. Git & Commit Rules

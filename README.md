@@ -74,7 +74,7 @@ Every repo set up with `repo-template/` gets:
   - `secret-scan.yml` — Gitleaks secret detection across git history and PR diffs
   - `dependency-review.yml` — Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses
   - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
-- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` / `CLAUDE.md` directly (free on public repos), with optional `ai-review.yml` BYOK fallback for private repos
+- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` / `CLAUDE.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
 - **Quality & release automation:** `ci.yml` (lint, format, typecheck, build, unit/integration, Playwright E2E + artifact upload), `labeler.yml`, `release.yml`, and `CODEOWNERS`
 - **Weekly maintenance loop (IST):**
 

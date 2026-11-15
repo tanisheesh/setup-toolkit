@@ -17,7 +17,8 @@ A task is `Done` only when **all** of these are true:
 1. **Running in production** (or built and ready if it's a library/CLI).
 2. **Verified end-to-end** on the real deployment or preview — not just `localhost`.
 3. **All checks pass:** formatter, linter, typechecker, build, and automated tests (see [testing-guidelines.md](testing-guidelines.md)).
-4. **Peripheral files updated in the same PR:** README, `docs/`, `.env.example`, schemas, and tests that belong to the change.
+4. **Local AI review (when `coderabbit` CLI is installed):** run `coderabbit review --agent --uncommitted` (or `--base main`) to catch bugs/security/slop before opening a PR.
+5. **Peripheral files updated in the same PR:** README, `docs/`, `.env.example`, schemas, and tests that belong to the change.
 
 ---
 
