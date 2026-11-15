@@ -80,8 +80,10 @@ it like a product pitch, not a feature list.}}
 
 ## Demo
 
-<!-- Optional: embed a launch/promo MP4 (e.g. generated with `/brag` -> brag-output/brag.mp4,
-     drag-dropped on GitHub) or terminal/walkthrough GIF. Delete if no video exists yet. -->
+<!-- Generated with `/brag` -> `brag-output/brag.mp4` (or terminal GIF).
+     Recommended: drag-and-drop `brag.mp4` into GitHub's editor to get a native
+     inline player URL (`https://github.com/user-attachments/assets/...`) without
+     bloating Git, or embed a compact `docs/assets/demo.mp4`. Delete if no demo yet. -->
 
 {{VIDEO_OR_GIF_EMBED}}
 

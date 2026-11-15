@@ -149,7 +149,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 7. **README:**
    - Pick the logo from lucide.dev and inline its SVG paths. Keep only the stack badges that apply (including CI/CodeQL badges).
    - Keep it crisp and showcase-oriented (~130–160 rendered lines max; **no Quick Start / install walkthrough in `README.md`** — keep setup in `docs/SETUP.md` and end-user usage in `docs/USAGE.md`).
-   - If the project has a promo/demo video (e.g. rendered with `/brag` from `latent-spaces/brag`), embed it under **Demo**; otherwise drop the section cleanly.
+   - If the project has a UI / product demo, optionally generate a launch video with `/brag` (`brag-output/brag.mp4`) and embed it under **Demo** (recommended: drag-and-drop into GitHub to get a `user-attachments` inline video URL without bloating Git; or store a compact `< 5MB` `docs/assets/demo.mp4`). Otherwise drop the **Demo** section cleanly.
    - In the Docs table, keep only rows for files that exist.
 8. **`docs/` depth (PRD, ARCHITECTURE, DECISIONS, SETUP, DEPLOY, optional USAGE):**
    - `PRD.md`: include quantified before/after baseline, Given/When/Then acceptance criteria, edge-case matrix, and unit economics/quota math.
@@ -160,7 +160,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 9. **CHANGELOG.md:** build the first entry from `git log --oneline` using the emoji → section map in its comment. Use version `1.0.0` and today's date unless tags exist.
 10. **CONTRIBUTING.md / SECURITY.md / CODE_OF_CONDUCT.md:** fill placeholders (`project name`, `live URL`, real install/check commands, `.env` vs `.env.local`).
 11. If the repo has no `.env.example`, create one: variable **names** only, with empty values and a short comment on where to get each.
-12. Make sure `.gitignore` covers `.env`, `.env.local`, `.env.*.local`.
+12. Make sure `.gitignore` covers `.env`, `.env.local`, `.env.*.local`, and `brag-output/` (unless keeping raw `/brag` assets intentionally).
 
 ## Step 3b — GitHub automation & stack templates
 
