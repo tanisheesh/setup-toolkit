@@ -31,12 +31,12 @@ jobs:
         id: detect
         run: |
           langs=()
-          if find . -maxdepth 5 -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' -not -path '*/.next/*' \
-            \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mjs' -o -name '*.cjs' \) -print -quit | grep -q .; then
+          if find . \( -name node_modules -o -name .git -o -name dist -o -name .next -o -name .venv -o -name venv \) -prune -o \
+            -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mjs' -o -name '*.cjs' \) -print -quit | grep -q .; then
             langs+=('"javascript-typescript"')
           fi
-          if find . -maxdepth 5 -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/.git/*' \
-            -name '*.py' -print -quit | grep -q .; then
+          if find . \( -name .venv -o -name venv -o -name .git -o -name node_modules \) -prune -o \
+            -type f -name '*.py' -print -quit | grep -q .; then
             langs+=('"python"')
           fi
 

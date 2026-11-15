@@ -16,9 +16,9 @@
 #   MAIL_USERNAME   repo secret. The Gmail address that sends the mail
 #   MAIL_PASSWORD   repo secret. A Gmail App Password (myaccount.google.com/apppasswords),
 #                   NOT your normal password. Needs 2-step verification on.
+#   REPORT_EMAIL    repo *variable*. Recipient email address (required to send email).
 #   ALERTS_TOKEN    optional secret. Fine-grained PAT with read access to
 #                   Dependabot alerts, Code scanning alerts, and Secret scanning alerts.
-#   REPORT_EMAIL    optional repo *variable* to send somewhere else.
 # scripts/setup-github-repo.ps1 sets these for you from the toolkit's .env file.
 #
 # Monthly instead of weekly: cron → "30 4 1 * *" and PERIOD_DAYS → "30".
@@ -38,13 +38,12 @@ permissions:
 
 env:
   PERIOD_DAYS: "7"
-  DEFAULT_REPORT_EMAIL: "hi@tanisheesh.in"
 
 jobs:
   report:
     runs-on: ubuntu-latest
     env:
-      HAS_MAIL: ${{ secrets.MAIL_USERNAME != '' }}
+      HAS_MAIL: ${{ secrets.MAIL_USERNAME != '' && secrets.MAIL_PASSWORD != '' && vars.REPORT_EMAIL != '' }}
     steps:
       - name: Build report
         id: build
@@ -66,21 +65,25 @@ jobs:
             --json conclusion,status,url,createdAt 2>/dev/null || echo '[]')
 
           sec_token="${ALERTS_TOKEN:-$GH_TOKEN}"
+
           alerts='[]'; alerts_ok=false
           if [ -n "${ALERTS_TOKEN:-}" ]; then
-            if a=$(GH_TOKEN="$ALERTS_TOKEN" gh api "repos/$REPO/dependabot/alerts?state=open&per_page=100" 2>/dev/null); then
-              alerts="$a"; alerts_ok=true
+            if a=$(GH_TOKEN="$ALERTS_TOKEN" gh api --paginate --slurp "repos/$REPO/dependabot/alerts?state=open&per_page=100" 2>/dev/null); then
+              alerts=$(jq -c 'add // []' <<<"$a")
+              alerts_ok=true
             fi
           fi
 
           code_alerts='[]'; code_alerts_ok=false
-          if ca=$(GH_TOKEN="$sec_token" gh api "repos/$REPO/code-scanning/alerts?state=open&per_page=100" 2>/dev/null); then
-            code_alerts="$ca"; code_alerts_ok=true
+          if ca=$(GH_TOKEN="$sec_token" gh api --paginate --slurp "repos/$REPO/code-scanning/alerts?state=open&per_page=100" 2>/dev/null); then
+            code_alerts=$(jq -c 'add // []' <<<"$ca")
+            code_alerts_ok=true
           fi
 
           secret_alerts='[]'; secret_alerts_ok=false
-          if sa=$(GH_TOKEN="$sec_token" gh api "repos/$REPO/secret-scanning/alerts?state=open&per_page=100" 2>/dev/null); then
-            secret_alerts="$sa"; secret_alerts_ok=true
+          if sa=$(GH_TOKEN="$sec_token" gh api --paginate --slurp "repos/$REPO/secret-scanning/alerts?state=open&per_page=100" 2>/dev/null); then
+            secret_alerts=$(jq -c 'add // []' <<<"$sa")
+            secret_alerts_ok=true
           fi
 
           n_merged=$(jq length <<<"$merged")
@@ -92,8 +95,16 @@ jobs:
           ci_url=$(jq -r '.[0].url // ""' <<<"$ci")
 
           case "$ci_state" in success) ci_badge="✅ passing";; failure) ci_badge="❌ failing";; *) ci_badge="⚪ $ci_state";; esac
-          if [ "$n_open" -gt 0 ] || [ "$n_alerts" -gt 0 ] || [ "$n_code_alerts" -gt 0 ] || [ "$n_secret_alerts" -gt 0 ] || [ "$ci_state" = failure ]; then
+
+          alerts_failed=false
+          if [ -n "${ALERTS_TOKEN:-}" ] && [ "$alerts_ok" = false ]; then
+            alerts_failed=true
+          fi
+
+          if [ "$n_open" -gt 0 ] || [ "$n_alerts" -gt 0 ] || [ "$n_code_alerts" -gt 0 ] || [ "$n_secret_alerts" -gt 0 ] || [ "$ci_state" = failure ] || [ "$alerts_failed" = true ]; then
             headline="⚠️ Needs your attention"
+          elif [ "$code_alerts_ok" = false ] || [ "$secret_alerts_ok" = false ] || [ "$alerts_ok" = false ]; then
+            headline="ℹ️ Passing (some security scans unavailable)"
           else
             headline="✅ All good. Nothing to do"
           fi
@@ -119,23 +130,43 @@ jobs:
             echo "<table style=\"border-collapse:collapse;font-size:14px\">"
             echo "<tr><td style=\"padding:4px 16px 4px 0\">Auto-merged updates</td><td><b>$n_merged</b></td></tr>"
             echo "<tr><td style=\"padding:4px 16px 4px 0\">Open update PRs</td><td><b>$n_open</b></td></tr>"
-            if $alerts_ok; then echo "<tr><td style=\"padding:4px 16px 4px 0\">Dependabot alerts</td><td><b>$n_alerts</b></td></tr>"; fi
-            if $code_alerts_ok; then echo "<tr><td style=\"padding:4px 16px 4px 0\">CodeQL alerts</td><td><b>$n_code_alerts</b></td></tr>"; fi
-            if $secret_alerts_ok; then echo "<tr><td style=\"padding:4px 16px 4px 0\">Secret alerts</td><td><b>$n_secret_alerts</b></td></tr>"; fi
+            if $alerts_ok; then
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">Dependabot alerts</td><td><b>$n_alerts</b></td></tr>"
+            elif $alerts_failed; then
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">Dependabot alerts</td><td><b style=\"color:#d93f0b\">unavailable (query failed)</b></td></tr>"
+            else
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">Dependabot alerts</td><td><span style=\"color:#888\">unavailable (ALERTS_TOKEN unset)</span></td></tr>"
+            fi
+            if $code_alerts_ok; then
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">CodeQL alerts</td><td><b>$n_code_alerts</b></td></tr>"
+            else
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">CodeQL alerts</td><td><span style=\"color:#888\">unavailable</span></td></tr>"
+            fi
+            if $secret_alerts_ok; then
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">Secret alerts</td><td><b>$n_secret_alerts</b></td></tr>"
+            else
+              echo "<tr><td style=\"padding:4px 16px 4px 0\">Secret alerts</td><td><span style=\"color:#888\">unavailable</span></td></tr>"
+            fi
             echo "<tr><td style=\"padding:4px 16px 4px 0\">CI on main</td><td><b>${ci_url:+<a href=\"$ci_url\">}$ci_badge${ci_url:+</a>}</b></td></tr>"
             echo "</table>"
             section "✅ Merged automatically" "$n_merged" "$li_merged" "No dependency updates merged this period."
             section "⏳ Waiting on you" "$n_open" "$li_open" "No open update PRs."
             if $alerts_ok; then
               section "📦 Dependabot alerts" "$n_alerts" "$li_alerts" "No open dependency alerts."
+            elif $alerts_failed; then
+              echo "<p style=\"margin:24px 0 0;color:#d93f0b;font-size:13px\">📦 Dependabot alerts query failed — check ALERTS_TOKEN permissions or Dependabot alert status.</p>"
             else
-              echo "<p style=\"margin:24px 0 0;color:#888;font-size:13px\">📦 Dependabot alerts not included (add an ALERTS_TOKEN secret to enable).</p>"
+              echo "<p style=\"margin:24px 0 0;color:#888;font-size:13px\">📦 Dependabot alerts unavailable (add an ALERTS_TOKEN secret to enable).</p>"
             fi
             if $code_alerts_ok; then
               section "🛡️ CodeQL alerts" "$n_code_alerts" "$li_code" "No open CodeQL findings."
+            else
+              echo "<p style=\"margin:16px 0 0;color:#888;font-size:13px\">🛡️ CodeQL alerts unavailable (Code scanning disabled or missing permissions).</p>"
             fi
             if $secret_alerts_ok; then
               section "🔑 Secret scanning alerts" "$n_secret_alerts" "$li_secret" "No exposed secrets detected."
+            else
+              echo "<p style=\"margin:16px 0 0;color:#888;font-size:13px\">🔑 Secret scanning alerts unavailable (Secret scanning disabled or missing ALERTS_TOKEN scope).</p>"
             fi
             echo "<hr style=\"border:none;border-top:1px solid #eee;margin:28px 0 12px\">"
             echo "<p style=\"font-size:12px;color:#888;margin:0\">Tanish Poddar · <a href=\"https://tanisheesh.in\">tanisheesh.in</a> · <a href=\"https://github.com/tanisheesh\">GitHub</a> · <a href=\"https://linkedin.com/in/tanisheesh\">LinkedIn</a> · <a href=\"mailto:hi@tanisheesh.in\">hi@tanisheesh.in</a></p>"
@@ -155,13 +186,13 @@ jobs:
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           from: Setup Toolkit <${{ secrets.MAIL_USERNAME }}>
-          to: ${{ vars.REPORT_EMAIL || env.DEFAULT_REPORT_EMAIL }}
+          to: ${{ vars.REPORT_EMAIL }}
           subject: ${{ steps.build.outputs.subject }}
           html_body: file://report.html
 
       - name: Note when email is not configured
         if: env.HAS_MAIL != 'true'
-        run: echo "::warning::MAIL_USERNAME / MAIL_PASSWORD secrets not set. Report is on the Summary page only, no email sent."
+        run: echo "::warning::MAIL_USERNAME, MAIL_PASSWORD, or REPORT_EMAIL not configured. Report is on the Summary page only, no email sent."
 
 # ──────────────────────────────────────────────────────────────────────────
 #  Tanish Poddar

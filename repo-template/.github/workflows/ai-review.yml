@@ -133,6 +133,7 @@ jobs:
               headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { maxOutputTokens: 1500 },
               }),
             });
             const data = await res.json();
