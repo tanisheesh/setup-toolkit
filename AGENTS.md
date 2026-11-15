@@ -21,7 +21,6 @@
     AGENTS.md                             ← you are here (setup playbook)
     repo-template/                        ← mirrors a repo's layout: each file goes to the same path in <repo>
       AGENTS.md                           → <repo>/AGENTS.md (runtime code/UI/security/test rules)
-      CLAUDE.md                           → <repo>/CLAUDE.md (@AGENTS.md pointer)
       README.md                           → <repo>/README.md
       CONTRIBUTING.md                     → <repo>/CONTRIBUTING.md
       SECURITY.md                         → <repo>/SECURITY.md
@@ -31,6 +30,7 @@
       .coderabbit.yaml                    → <repo>/.coderabbit.yaml
       docs/
         PRD.md  ARCHITECTURE.md  DECISIONS.md  SETUP.md  DEPLOY.md
+        USAGE.md                          ← only if repo exposes a CLI, SDK/package, or public API
       .github/
         CODEOWNERS
         labeler.yml
@@ -142,15 +142,21 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 2. Replace every `{{e.g. ...}}` hint with the repo's real content. Don't leave example text from the template.
 3. **Delete all `<!-- ... -->` comments** in the final Markdown files (including the toolkit banner at the top).
    **Keep the author footer** (the centered "Tanish Poddar" block with Website / LinkedIn / GitHub / Email badges) at the bottom of every generated Markdown file, unchanged.
-4. Delete sections that don't apply (e.g. "AI / LLM Design" if there's no LLM, "Traction" if no real numbers).
-5. **`AGENTS.md` & `CLAUDE.md` (runtime):**
-   - Keep `AGENTS.md` tailored to this repo's real stack (e.g. remove Python lines if pure TS, or TS/UI lines if pure Python CLI), and fill the exact `Verification Commands` (`lint`, `typecheck`, `build`, `test`) from `package.json` / `pyproject.toml`.
-   - Update `CLAUDE.md` with `{{PROJECT_NAME}}` so Claude Code loads `@AGENTS.md`.
-6. **README:**
-   - Pick the logo from lucide.dev and inline its SVG paths. Keep only the stack badges that apply.
-   - Keep it short (~120 rendered lines max). In the Docs table, keep only rows for files that exist.
-7. **docs/DEPLOY.md:** keep only the platform section(s) the repo actually uses (Vercel / Render / Docker).
-8. **DECISIONS.md / README "Engineering Decisions":** only real decisions visible in the code. Never invent one.
+4. Delete sections that don't apply (e.g. "AI / LLM Design" if there's no LLM, "Traction" if no real numbers, "Demo" if no promo video exists yet).
+5. **Ground every number in reality:** Extract concrete limits, timeouts, rate limits, schema constraints, token caps, test counts, and measured timings directly from code/configs/tests. Never invent fake benchmarks or user numbers; drop or ask about anything unverified.
+6. **`AGENTS.md` (runtime):**
+   - Keep `AGENTS.md` tailored to this repo's real stack (e.g. remove Python lines if pure TS, or TS/UI lines if pure Python CLI), and fill the exact `Verification Commands` (`lint`, `typecheck`, `build`, `test`) from `package.json` / `pyproject.toml`. (Do not create a separate `CLAUDE.md` in target repos — `AGENTS.md` is the single runtime contract.)
+7. **README:**
+   - Pick the logo from lucide.dev and inline its SVG paths. Keep only the stack badges that apply (including CI/CodeQL badges).
+   - Keep it crisp and showcase-oriented (~130–160 rendered lines max; **no Quick Start / install walkthrough in `README.md`** — keep setup in `docs/SETUP.md` and end-user usage in `docs/USAGE.md`).
+   - If the project has a promo/demo video (e.g. rendered with Remotion via `remotion-dev/skills`), embed it under **Demo**; otherwise drop the section cleanly.
+   - In the Docs table, keep only rows for files that exist.
+8. **`docs/` depth (PRD, ARCHITECTURE, DECISIONS, SETUP, DEPLOY, optional USAGE):**
+   - `PRD.md`: include quantified before/after baseline, Given/When/Then acceptance criteria, edge-case matrix, and unit economics/quota math.
+   - `ARCHITECTURE.md`: include Mermaid diagrams (`flowchart`, `sequenceDiagram`, `erDiagram`), full API contracts, DB schema/indexes, caching/idempotency, LLM internals (if any), and 10x/100x scale ceilings.
+   - `DECISIONS.md`: include side-by-side comparison tables and explicit reversal trigger thresholds.
+   - `SETUP.md` & `DEPLOY.md`: include full env matrix, seed/test commands, troubleshooting matrix, live `curl` verification checks, zero-downtime migration notes, and incident playbooks.
+   - `USAGE.md`: include **only** when the repo ships a CLI, SDK/library, or public API; delete it for standard web apps.
 9. **CHANGELOG.md:** build the first entry from `git log --oneline` using the emoji → section map in its comment. Use version `1.0.0` and today's date unless tags exist.
 10. **CONTRIBUTING.md / SECURITY.md / CODE_OF_CONDUCT.md:** fill placeholders (`project name`, `live URL`, real install/check commands, `.env` vs `.env.local`).
 11. If the repo has no `.env.example`, create one: variable **names** only, with empty values and a short comment on where to get each.
@@ -190,7 +196,7 @@ Make atomic commits, for example:
 ```
 📚 docs: add prd, architecture, decisions, setup and deploy
 📚 rewrite readme with standard template
-📚 add runtime agents.md, claude.md, contributing, security, code of conduct and changelog
+📚 add runtime agents.md, contributing, security, code of conduct and changelog
 🔨 add pr, issue templates, codeowners, coderabbit and editorconfig
 👷 add ci, codeql, secret-scan, dependency-review, labeler, renovate and maintenance report
 🧪 add playwright smoke and a11y baseline
@@ -252,7 +258,7 @@ If a credential is missing (and no local CLI fallback exists), **stop and tell t
 
 Check, then report to the user as a checklist:
 
-- [ ] `README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md` and `docs/PRD.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SETUP.md`, `DEPLOY.md` exist, with no `{{` and no `<!--` left
+- [ ] `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md` and `docs/PRD.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SETUP.md`, `DEPLOY.md` (plus `USAGE.md` if CLI/SDK/API) exist, with no `{{` and no `<!--` left
   (`grep -rn "{{\|<!--" *.md docs/`)
 - [ ] Every generated Markdown doc ends with the author footer (name, website, LinkedIn, GitHub, email)
 - [ ] `.coderabbit.yaml`, `.editorconfig`, `.github/CODEOWNERS`, `labeler.yml`, PR/issue templates, `renovate.json`, and workflows (`ci`, `codeql`, `dependency-review`, `secret-scan`, `labeler`, `release`, `renovate`, `dependency-auto-merge`, `maintenance-report`) are configured

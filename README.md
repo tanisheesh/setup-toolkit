@@ -23,7 +23,7 @@
 
 ## What is this?
 
-Every project I ship gets the same engineering bar: recruiter-friendly docs, runtime `AGENTS.md` / `CLAUDE.md` code-quality & anti-AI-slop UI rules, 4-layer testing, GitHub security scanning + rulesets + AI PR review, tuned Vercel settings, and a live `*.tanisheesh.in` URL.
+Every project I ship gets the same engineering bar: deep numbers-backed docs, runtime `AGENTS.md` code-quality & anti-AI-slop UI rules, 4-layer testing, GitHub security scanning + rulesets + AI PR review, tuned Vercel settings, and a live `*.tanisheesh.in` URL.
 
 A coding agent reads `AGENTS.md` and applies the entire standard to any repo, asking only for values it can't infer from the code.
 
@@ -43,7 +43,7 @@ Then open your coding agent inside `my-app/` and say:
 
 > Follow `../setup-toolkit/AGENTS.md` for this repo.
 
-The agent audits the codebase, asks for missing values in one turn, generates docs + runtime `AGENTS.md` / `CLAUDE.md`, wires GitHub security & CI workflows, makes atomic emoji commits locally, and (after push) configures GitHub, Vercel, and GoDaddy DNS. **It never pushes without your approval.**
+The agent audits the codebase, asks for missing values in one turn, generates deep docs + runtime `AGENTS.md`, wires GitHub security & CI workflows, makes atomic emoji commits locally, and (after push) configures GitHub, Vercel, and GoDaddy DNS. **It never pushes without your approval.**
 
 ---
 
@@ -52,7 +52,7 @@ The agent audits the codebase, asks for missing values in one turn, generates do
 | Path | Purpose |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | 7-step setup playbook for coding agents |
-| [`repo-template/`](repo-template) | Mirror-layout templates for docs, runtime `AGENTS.md`/`CLAUDE.md`, `.coderabbit.yaml`, `.github/` workflows & community files |
+| [`repo-template/`](repo-template) | Mirror-layout templates for README, deep `docs/` (PRD, Architecture w/ Mermaid, ADRs, Setup, Deploy, optional Usage), runtime `AGENTS.md`, `.coderabbit.yaml`, `.github/` workflows & community files |
 | [`stack-templates/`](stack-templates) | Conditional stack configs: `vercel.json` security headers, `render.yaml`, Playwright + `@axe-core/playwright` smoke tests |
 | [`guidelines/commit-style.md`](guidelines/commit-style.md) | Mandatory emoji commit format: `<emoji> [#issue] [scope:] <message>` |
 | [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Engineering standards, reusable component layering, PR rules, and git safety |
@@ -74,7 +74,7 @@ Every repo set up with `repo-template/` gets:
   - `secret-scan.yml` — Gitleaks secret detection across git history and PR diffs
   - `dependency-review.yml` — Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses
   - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
-- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` / `CLAUDE.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
+- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
 - **Quality & release automation:** `ci.yml` (lint, format, typecheck, build, unit/integration, Playwright E2E + artifact upload), `labeler.yml`, `release.yml`, and `CODEOWNERS`
 - **Custom-branded dependency updates (`renovate.json` + `renovate.yml` + `BOT_TOKEN`):** Uses a dedicated GitHub bot account so dependency PRs, commits, and the Contributors list display your custom bot avatar and Display Name (e.g. `Dependabot [bot]`) instead of `dependabot[bot]`
 - **Weekly maintenance loop (IST):**
