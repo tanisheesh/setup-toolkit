@@ -66,47 +66,60 @@ function Get-VercelApiError($errRecord) {
     return $errRecord.Exception.Message
 }
 
-function Get-ProjectStack([string]$path) {
+function Get-ProjectStack([string]$path, [string]$rootDir = "") {
     $result = @{
         Framework   = $null
         NodeVersion = $null
     }
     if (-not $path -or -not (Test-Path $path)) { return $result }
 
-    $pkgPath = Join-Path $path "package.json"
-    if (Test-Path $pkgPath) {
-        try {
-            $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
-            $deps = @{}
-            foreach ($section in @($pkg.dependencies, $pkg.devDependencies)) {
-                if ($section) {
-                    $section.PSObject.Properties | ForEach-Object { $deps[$_.Name] = $_.Value }
+    $appPath = if ($rootDir) { Join-Path $path $rootDir } else { $path }
+    $inspectPaths = @($appPath, $path) | Select-Object -Unique
+
+    if (Test-Path $appPath) {
+        $pkgPath = Join-Path $appPath "package.json"
+        if (Test-Path $pkgPath) {
+            try {
+                $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
+                $deps = @{}
+                foreach ($section in @($pkg.dependencies, $pkg.devDependencies)) {
+                    if ($section) {
+                        $section.PSObject.Properties | ForEach-Object { $deps[$_.Name] = $_.Value }
+                    }
                 }
-            }
-            if     ($deps.ContainsKey("next"))            { $result.Framework = "nextjs" }
-            elseif ($deps.ContainsKey("astro"))           { $result.Framework = "astro" }
-            elseif ($deps.ContainsKey("@sveltejs/kit"))   { $result.Framework = "sveltekit" }
-            elseif ($deps.ContainsKey("nuxt"))            { $result.Framework = "nuxtjs" }
-            elseif ($deps.ContainsKey("@remix-run/react")){ $result.Framework = "remix" }
-            elseif ($deps.ContainsKey("react-router"))    { $result.Framework = "react-router" }
-            elseif ($deps.ContainsKey("vite"))            { $result.Framework = "vite" }
-            elseif ($deps.ContainsKey("hono"))            { $result.Framework = "hono" }
-            elseif ($deps.ContainsKey("express"))         { $result.Framework = "express" }
-        } catch {}
+                $isReactRouterFramework = $deps.ContainsKey("@react-router/dev") -or
+                    (Test-Path (Join-Path $appPath "react-router.config.ts")) -or
+                    (Test-Path (Join-Path $appPath "react-router.config.js"))
+
+                if     ($deps.ContainsKey("next"))             { $result.Framework = "nextjs" }
+                elseif ($deps.ContainsKey("astro"))            { $result.Framework = "astro" }
+                elseif ($deps.ContainsKey("@sveltejs/kit"))    { $result.Framework = "sveltekit" }
+                elseif ($deps.ContainsKey("nuxt"))             { $result.Framework = "nuxtjs" }
+                elseif ($deps.ContainsKey("@remix-run/react")) { $result.Framework = "remix" }
+                elseif ($isReactRouterFramework)               { $result.Framework = "react-router" }
+                elseif ($deps.ContainsKey("vite"))             { $result.Framework = "vite" }
+                elseif ($deps.ContainsKey("hono"))             { $result.Framework = "hono" }
+                elseif ($deps.ContainsKey("express"))          { $result.Framework = "express" }
+            } catch {}
+        }
     }
 
-    foreach ($f in @(".nvmrc", ".node-version")) {
-        $vf = Join-Path $path $f
-        if (Test-Path $vf) {
-            $raw = (Get-Content $vf -Raw).Trim() -replace '^v', ''
-            if ($raw -match '^(\d+)') {
-                $major = "$($Matches[1]).x"
-                if ($major -in @("20.x", "22.x", "24.x", "26.x")) {
-                    $result.NodeVersion = $major
+    foreach ($dir in $inspectPaths) {
+        if (-not (Test-Path $dir)) { continue }
+        foreach ($f in @(".nvmrc", ".node-version")) {
+            $vf = Join-Path $dir $f
+            if (Test-Path $vf) {
+                $raw = (Get-Content $vf -Raw).Trim() -replace '^v', ''
+                if ($raw -match '^(\d+)') {
+                    $major = "$($Matches[1]).x"
+                    if ($major -in @("20.x", "22.x", "24.x", "26.x")) {
+                        $result.NodeVersion = $major
+                    }
                 }
+                break
             }
-            break
         }
+        if ($result.NodeVersion) { break }
     }
 
     return $result
@@ -115,7 +128,7 @@ function Get-ProjectStack([string]$path) {
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 $VercelToken = Resolve-VercelToken $VercelToken
-$detected = Get-ProjectStack $RepoPath
+$detected = Get-ProjectStack $RepoPath $RootDirectory
 
 $resolvedFramework = if ($Framework) { $Framework } elseif ($detected.Framework) { $detected.Framework } else { $null }
 $resolvedNode      = if ($NodeVersion) { $NodeVersion } elseif ($detected.NodeVersion) { $detected.NodeVersion } else { "22.x" }
@@ -144,7 +157,7 @@ $basePayload = @{
 if ($resolvedFramework) { $basePayload.framework = $resolvedFramework }
 if ($RootDirectory)     { $basePayload.rootDirectory = $RootDirectory }
 if ($IgnoreDocsOnlyBuilds) {
-    $basePayload.commandForIgnoringBuildStep = "git diff --quiet HEAD^ HEAD -- . ':!docs' ':!*.md' ':!.github'"
+    $basePayload.commandForIgnoringBuildStep = '[ -n "$VERCEL_GIT_PREVIOUS_SHA" ] && git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- . '':!docs'' '':!*.md'' '':!.github'''
 }
 
 $fullPayload = $basePayload.Clone()

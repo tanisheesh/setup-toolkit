@@ -308,13 +308,40 @@ function Set-RepoSecrets($repoName) {
         }
     }
 
+    $mailUser = [Environment]::GetEnvironmentVariable("MAIL_USERNAME")
     $reportEmail = [Environment]::GetEnvironmentVariable("REPORT_EMAIL")
+    if (-not $reportEmail -and $mailUser) {
+        $reportEmail = if ($Owner -eq "tanisheesh") { "hi@tanisheesh.in" } else { $mailUser }
+    }
     if ($reportEmail) {
         $env:GH_TOKEN = $GitHubToken
         gh variable set REPORT_EMAIL -b $reportEmail -R "$Owner/$repoName" 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "    [Vars]     REPORT_EMAIL set" -ForegroundColor Green
+            Write-Host "    [Vars]     REPORT_EMAIL set ($reportEmail)" -ForegroundColor Green
         }
+    } elseif ($mailUser) {
+        Write-Host "    [Vars]     REPORT_EMAIL not set; maintenance-report emails skipped until REPORT_EMAIL is set" -ForegroundColor Yellow
+    }
+}
+
+function Sync-PrivateScanVars($repoName) {
+    $uri = "https://api.github.com/repos/$Owner/$([uri]::EscapeDataString($repoName))"
+    try {
+        $info = Invoke-RestMethod -Method GET -Uri $uri -Headers (Get-Headers)
+        if ($info.private -eq $true) {
+            $ghasEnabled = ($info.security_and_analysis.advanced_security.status -eq "enabled") -or
+                           ($info.security_and_analysis.code_security.status -eq "enabled")
+            if ($ghasEnabled -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+                $env:GH_TOKEN = $GitHubToken
+                gh variable set ENABLE_CODEQL -b "true" -R "$Owner/$repoName" 2>&1 | Out-Null
+                gh variable set ENABLE_DEPENDENCY_REVIEW -b "true" -R "$Owner/$repoName" 2>&1 | Out-Null
+                Write-Host "    [Vars]     Private repo with GHAS: ENABLE_CODEQL + ENABLE_DEPENDENCY_REVIEW set" -ForegroundColor Green
+            } else {
+                Write-Host "    [Security] Private repo without GHAS: CodeQL & Dependency Review workflows are unavailable and will skip" -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Host "    [Security] Could not inspect repo visibility/GHAS status: $(Get-ApiErrorMessage $_)" -ForegroundColor Yellow
     }
 }
 
@@ -333,7 +360,7 @@ Write-Host "`n━━━ $Owner/$Repo ━━━`n" -ForegroundColor Cyan
 
 Update-RepoMeta $Repo $Homepage $Description
 if ($Topics.Count -gt 0) { Update-RepoTopics $Repo $Topics }
-if (-not $SkipSecurity)  { Enable-RepoSecurity $Repo }
+if (-not $SkipSecurity)  { Enable-RepoSecurity $Repo; Sync-PrivateScanVars $Repo }
 if (-not $SkipRuleset)   { Sync-RepoRuleset $Repo }
 if (-not $SkipLabels)    { Sync-RepoLabels $Repo }
 if (-not $SkipSecrets)   { Set-RepoSecrets $Repo }

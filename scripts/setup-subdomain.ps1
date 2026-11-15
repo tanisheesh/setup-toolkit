@@ -149,10 +149,16 @@ function Get-RenderServiceId($onrenderHostname) {
             $cursor = $res[-1].cursor
         } while ($res.Count -eq 100 -and $cursor)
 
-        # Prefer exact slug or URL match before wildcard name match
+        # Prefer exact slug or exact URL hostname match before wildcard name match
         $exact = $all | Where-Object {
-            $_.service.slug -eq $slug -or
-            ($_.service.serviceDetails.url -and $_.service.serviceDetails.url -match [regex]::Escape($onrenderHostname))
+            if ($_.service.slug -eq $slug) { return $true }
+            if ($_.service.serviceDetails.url) {
+                $parsedUri = $null
+                if ([uri]::TryCreate($_.service.serviceDetails.url, [System.UriKind]::Absolute, [ref]$parsedUri)) {
+                    return ($parsedUri.Host -eq $onrenderHostname)
+                }
+            }
+            return $false
         } | Select-Object -First 1
         if ($exact) { return $exact.service.id }
 
