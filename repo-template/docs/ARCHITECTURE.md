@@ -150,6 +150,16 @@ erDiagram
 
 ---
 
+## 6b. ML / Geospatial / Hardware Pipeline
+
+<!-- Include ONLY for ML, CV, geospatial, or embedded/digital-twin projects. Delete otherwise. -->
+
+- **Models / Algorithms:** {{e.g. Pre-trained LightGBM / MediaPipe Pose / 1D Kalman Filter / classical DIP filters — exact hyperparameters & inference latency}}
+- **Datasets & Provenance:** {{e.g. Sentinel-2 L2A bands, MODIS thermal, OpenStreetMap footprints — resolution, CRS, preprocessing pipeline}}
+- **Hardware / Telemetry (if applicable):** {{e.g. MCU target (ESP32-S3), sensors, baud/LoRa frequency (865 MHz), packet framing, offline fallback}}
+
+---
+
 ## 7. API Contracts
 
 | Method | Route | Auth & Ownership | Rate Limit | Request / Query | Responses (`2xx` / `4xx` / `5xx`) |

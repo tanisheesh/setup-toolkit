@@ -61,7 +61,7 @@ The agent audits the codebase, asks for missing values in one turn, generates de
 | [`guidelines/testing-guidelines.md`](guidelines/testing-guidelines.md) | 4-layer testing pyramid (unit, integration/API, Playwright E2E + a11y, regression) |
 | [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Metadata, squash-only merge settings, Secret Scanning + Push Protection, `Protect main` ruleset, labels, and secrets |
 | [`scripts/setup-vercel-project.ps1`](scripts/setup-vercel-project.ps1) | Auto-detects stack/Node version and configures Vercel security, Fluid compute, region, and docs-ignore builds |
-| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` on Vercel/Render and sets/overwrites the GoDaddy CNAME |
+| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` on Vercel, Render, Railway, GitHub Pages, or Custom hosts and sets/overwrites the GoDaddy CNAME |
 
 ---
 
@@ -75,7 +75,7 @@ Every repo set up with `repo-template/` gets:
   - `dependency-review.yml` — Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses
   - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
 - **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
-- **Quality & release automation:** `ci.yml` (lint, format, typecheck, build, unit/integration, Playwright E2E + artifact upload), `labeler.yml`, `release.yml`, and `CODEOWNERS`
+- **Quality & release automation:** `ci.yml` (`CI_DIRS: auto` monorepo discovery across Node/pnpm/Bun, Python, Go, Flutter + Playwright E2E), `codeql.yml` (JS/TS, Python, Go), `labeler.yml`, `release.yml`, and `CODEOWNERS`
 - **Custom-branded dependency updates (`renovate.json` + `renovate.yml` + `BOT_TOKEN`):** Uses a dedicated GitHub bot account so dependency PRs, commits, and the Contributors list display your custom bot avatar and Display Name (e.g. `Dependabot [bot]`) instead of `dependabot[bot]`
 - **Weekly maintenance loop (IST):**
 
@@ -111,6 +111,8 @@ Get-Content .\.env | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*(.+)$' } |
 .\scripts\setup-vercel-project.ps1 -Project "my-app" -RepoPath "..\my-app" -Region "bom1" -IgnoreDocsOnlyBuilds
 .\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Vercel -VercelProject "my-app"
 .\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Render -RenderHost "my-app.onrender.com"
+.\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Railway -TargetHost "my-app.up.railway.app"
+.\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform GitHubPages
 ```
 
 ---

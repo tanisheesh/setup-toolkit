@@ -104,6 +104,11 @@ Each story pairs a user flow with concrete Given / When / Then acceptance criter
 - {{Testable requirement — Loading, Empty, Error, Populated states}}
 - {{Testable requirement}}
 
+### 6.4 {{Optional: ML / Geospatial / Hardware Requirements}}
+<!-- Include ONLY for ML, computer vision, geospatial, or hardware/digital-twin projects; delete otherwise. -->
+- **Data & Reproducibility:** {{e.g. Dataset sources (Sentinel-2 / MODIS / Kaggle), preprocessing seed, model artifact checksum/version}}
+- **Hardware / Telemetry (if applicable):** {{e.g. Sensor sampling rate, Kalman filter parameters, serial/LoRa packet loss bounds}}
+
 ---
 
 ## 7. Edge-Case & Failure Behavior Matrix

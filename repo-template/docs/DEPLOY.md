@@ -64,12 +64,27 @@ Configure all secrets in the host dashboard (encrypted at rest; never commit). F
 3. Start command: `{{e.g. uvicorn app.main:app --host 0.0.0.0 --port $PORT}}`
 4. Health check path: `{{/api/health}}` · Add env vars from Section 2 → Deploy.
 
-### Option C: Docker (Self-Host)
+### Option C: Railway
+
+1. Connect `tanisheesh/{{REPO_NAME}}` in Railway (`railway.toml` / `railway.json` sets start + healthcheck).
+2. Add env vars from Section 2 and bind `{{SUBDOMAIN}}.tanisheesh.in` under Service → Networking → Custom Domain.
+
+### Option D: Firebase App Hosting / GitHub Pages / Streamlit Cloud
+
+- **Firebase App Hosting (`apphosting.yaml`):** Connect `main` branch in Firebase Console; bind custom domain in App Hosting settings.
+- **GitHub Pages:** Repo Settings → Pages → Source (`main` or Actions); set Custom domain `{{SUBDOMAIN}}.tanisheesh.in` + Enforce HTTPS.
+- **Streamlit Cloud:** Import `tanisheesh/{{REPO_NAME}}` (`app.py`), add Secrets from Section 2 in Advanced Settings.
+
+### Option E: Docker (Self-Host)
 
 ```bash
 docker build -t {{REPO_NAME}} .
 docker run -d --restart unless-stopped -p {{PORT}}:{{PORT}} --env-file .env {{REPO_NAME}}
 ```
+
+### Option F: Package / CLI Release (PyPI / npm)
+
+- Tag a semver release (`git tag v1.0.0 && git push origin v1.0.0`) or publish via trusted OIDC / workflow (`release.yml`).
 
 ---
 
@@ -90,7 +105,7 @@ docker run -d --restart unless-stopped -p {{PORT}}:{{PORT}} --env-file .env {{RE
 `{{SUBDOMAIN}}.tanisheesh.in` is wired via:
 
 ```powershell
-..\setup-toolkit\scripts\setup-subdomain.ps1 -Subdomain "{{SUBDOMAIN}}" -Platform {{Vercel|Render}} {{-VercelProject "<slug>" | -RenderHost "<svc>.onrender.com"}}
+..\setup-toolkit\scripts\setup-subdomain.ps1 -Subdomain "{{SUBDOMAIN}}" -Platform {{Vercel|Render|Railway|GitHubPages|Custom}} {{-VercelProject "<slug>" | -RenderHost "<svc>.onrender.com" | -TargetHost "<target>"}}
 ```
 
 - **Manual DNS fallback:** Add `{{SUBDOMAIN}}.tanisheesh.in` in the host dashboard, then set GoDaddy CNAME `{{SUBDOMAIN}}` → `{{cname.vercel-dns.com | <svc>.onrender.com}}` (TTL 600s; propagation 2–10 min).

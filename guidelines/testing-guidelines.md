@@ -14,10 +14,10 @@
 
 | Layer | Recommended Tools | What to Cover |
 |---|---|---|
-| **1. Unit Tests** | `vitest` / `bun test` (JS/TS) · `pytest` (Python) | Pure functions, scoring/calculations, parsers, formatters, Zod/Pydantic schemas, boundary & null/empty cases |
-| **2. Integration & API Tests** | `vitest` + handler/supertest tests · `pytest` + `httpx` / `TestClient` | Success (`200`/`201`), validation failures (`400`/`422`), unauthenticated (`401`), cross-user IDOR (`403`), missing resource (`404`), idempotent retries, mocked LLM/webhook failures |
-| **3. E2E, Visual & A11y Smoke** | `Playwright` + `@axe-core/playwright` | Core user journeys against the built app, **0 `console.error`**, **0 uncaught `pageerror`**, **0 5xx responses**, horizontal overflow check at `375px` & `1280px`, WCAG AA accessibility scan |
-| **4. Static & Build Gates** | `eslint` / `biome` · `tsc --noEmit` · `ruff` · `mypy`/`pyright` | Zero warnings/errors before any test suite runs |
+| **1. Unit Tests** | `vitest` / `bun test` (JS/TS) · `pytest` (Python) · `go test -race` (Go) · `flutter test` (Dart) | Pure functions, scoring/calculations, parsers, formatters, Zod/Pydantic schemas, boundary & null/empty cases |
+| **2. Integration & API Tests** | `vitest` + handler/supertest tests · `pytest` + `httpx` / `TestClient` · `httptest` (Go) | Success (`200`/`201`), validation failures (`400`/`422`), unauthenticated (`401`), cross-user IDOR (`403`), missing resource (`404`), idempotent retries, mocked LLM/webhook failures |
+| **3. E2E, Visual & A11y Smoke** | `Playwright` + `@axe-core/playwright` (Web) · `flutter test` widget/integration tests (Mobile) · CLI subprocess tests (`aegis-shell`) | Core user journeys against the built app, **0 `console.error`**, **0 uncaught `pageerror`**, **0 5xx responses**, horizontal overflow check at `375px` & `1280px`, WCAG AA accessibility scan |
+| **4. Static & Build Gates** | `eslint` / `biome` · `tsc --noEmit` · `ruff` / `mypy` · `go vet` · `flutter analyze` | Zero warnings/errors before any test suite runs |
 
 ---
 
@@ -53,6 +53,10 @@ CI (`ci.yml`) auto-detects and runs these scripts in order if present:
 - Configure `ruff` in `pyproject.toml` (`[tool.ruff]`).
 - Place tests under `tests/` (`test_*.py`) for automatic `pytest` discovery.
 - Add `mypy` or `pyright` when typing public APIs/services.
+
+### Go & Flutter/Dart
+- **Go:** Run `go vet ./...`, `go test -race ./...`, and `go build ./...`.
+- **Flutter/Dart:** Run `flutter analyze` and `flutter test` (widget + unit tests under `test/`).
 
 ---
 

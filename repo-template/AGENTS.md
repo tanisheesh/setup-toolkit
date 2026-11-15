@@ -22,6 +22,7 @@ Follow these rules strictly on every file you create or modify in **{{PROJECT_NA
 - **File naming:**
   - {{TypeScript/JavaScript: ALWAYS use `kebab-case` (`user-profile.ts`, `use-debounce.ts`), except framework-required files (`page.tsx`, `layout.tsx`, `route.ts`).}}
   - {{Python: ALWAYS use `snake_case` for modules/functions/variables and `PascalCase` for classes.}}
+  - {{Go / Flutter: Go uses short lowercase filenames (`proxy_test.go`), Dart/Flutter uses `snake_case.dart`.}}
 - **File size limit:** Keep files focused and **under 300 lines**. When approaching 300 lines, split into cohesive modules.
 - **Layered separation:**
   - `components/ui/` — pure, domain-agnostic UI primitives (`Button`, `Badge`, `Card`, `EmptyState`, `ErrorBanner`). No `fetch()` or business logic inside `ui/`.
@@ -81,10 +82,10 @@ Follow these rules strictly on every file you create or modify in **{{PROJECT_NA
 ### Verification Commands (Run Before Finishing)
 
 ```bash
-{{LINT_CMD}}        # e.g. npm run lint / ruff check .
-{{TYPECHECK_CMD}}   # e.g. npm run typecheck
-{{BUILD_CMD}}       # e.g. npm run build / python -m compileall -q .
-{{TEST_CMD}}        # e.g. npm test / pytest -q
+{{LINT_CMD}}        # e.g. npm run lint / ruff check . / go vet ./... / flutter analyze
+{{TYPECHECK_CMD}}   # e.g. npm run typecheck / mypy .
+{{BUILD_CMD}}       # e.g. npm run build / python -m compileall -q . / go build ./...
+{{TEST_CMD}}        # e.g. npm test / pytest -q / go test -race ./... / flutter test
 ```
 
 If `coderabbit` CLI is installed locally, optionally run a pre-PR review on your changes:

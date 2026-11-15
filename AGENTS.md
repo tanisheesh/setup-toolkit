@@ -118,23 +118,39 @@ Fill this table. Auto-detect what you can; **ask the user for everything still b
 | Value | How to find it |
 |---|---|
 | `REPO_NAME` | git remote URL / folder name |
+| `REPO_PROFILE` | `Portfolio` (public OSS/demo) · `Private Product` · `Client Website` · `OSS Package / CLI` |
 | `PROJECT_NAME` | display name (README title / package name), confirm with user |
 | `ONE_LINE_DESCRIPTION` | draft from code, confirm with user |
-| `LIVE_URL` | existing README / `vercel.json` / user. Usually `https://<sub>.tanisheesh.in` |
-| `PLATFORM` | `Vercel` or `Render` (or none if not deployed) |
-| `SUBDOMAIN` | prefix before `.tanisheesh.in`. **Always ask, never guess** |
+| `LIVE_URL` | existing README / `vercel.json` / `render.yaml` / user (or `N/A` if CLI/library/private) |
+| `PLATFORM` | `Vercel` · `Render` · `Railway` · `GitHubPages` · `Custom` (Firebase/Streamlit) · or none |
+| `SUBDOMAIN` | prefix before `.tanisheesh.in` (skip for client custom domains or undeployed). **Always ask, never guess** |
 | `VERCEL_PROJECT` | Vercel project slug (if Vercel). **Ask** |
 | `VERCEL_REGION` | `bom1` (default India) or co-located DB region (e.g. `iad1` / `sin1`) |
 | `RENDER_HOST` | `<service>.onrender.com` (if Render). **Ask** |
+| `TARGET_HOST` | `<id>.up.railway.app` / custom CNAME target (if Railway or Custom). **Ask** |
 | `BRAND_COLOR` | hex. Take it from the app's theme/tailwind config if present, else ask |
 | Demo credentials | only if the live app needs login. Ask |
 | Traction numbers | **ask**. Leave the section out if there are none |
 | Sponsor platform | **ask** (GitHub Sponsors / Buy Me a Coffee / Ko-fi / none) for `FUNDING.yml` |
 | Strict ruleset? | default is PR-enforced with admin bypass; ask if user wants strict PR-only (`-StrictRuleset`) |
 
-Also ask: *"Which steps do you want: docs & runtime AGENTS.md / GitHub metadata & scanning / Vercel settings / subdomain?"* If the user already said, skip asking.
+Also ask: *"Fresh setup or Upgrade (existing v1 toolkit repo)? Which steps: docs & runtime AGENTS.md / GitHub metadata & scanning / Vercel settings / subdomain?"* If the user already said, skip asking.
+
+### Repo Profiles (Adjust Standards by Type)
+
+- **Portfolio (default public):** `GPL-3.0` badge allowed, `*.tanisheesh.in`, full docs + promo demo + CodeQL/Gitleaks.
+- **Private Product:** Omit `GPL-3.0` badge; keep internal architecture/runbooks sharp; note CodeQL/Dependency Review skip unless GHAS is enabled; never expose stealth URLs/secrets.
+- **Client Website:** Preserve client branding, custom client domain, and client license/copyright (do not force `GPL-3.0` or `*.tanisheesh.in`).
+- **OSS Package / CLI:** Include `docs/USAGE.md` with install, flags/SDK signatures, and release workflow; omit UI-only sections if no frontend exists.
 
 ## Step 3 — Write the docs & runtime coding contract
+
+> **Upgrade Mode (Repo Already Has v1 Docs & Workflows):**
+> Do **NOT** overwrite custom `README.md` or `docs/*.md` unless missing sections or explicitly requested. Instead:
+> 1. Add missing `AGENTS.md` (runtime) and `.coderabbit.yaml` + `.github/CODEOWNERS` + `.github/labeler.yml`.
+> 2. Remove legacy `.github/dependabot.yml` and `.github/workflows/dependabot-auto-merge.yml` (if present).
+> 3. Copy/upgrade `.github/workflows/` (`ci.yml`, `codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml`, `renovate.yml`, `dependency-auto-merge.yml`, `maintenance-report.yml`) + `.github/renovate.json`.
+> 4. Preserve any repo-specific custom workflows (e.g. `bench.yml`, `release-sdk*.yml`) untouched unless they use deprecated Node 20 actions.
 
 Copy each file from `repo-template/` to the **same relative path** in the repo, then fill it.
 
@@ -170,7 +186,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 |---|---|
 | `.coderabbit.yaml`, `.github/CODEOWNERS`, `PULL_REQUEST_TEMPLATE.md`, `ISSUE_TEMPLATE/*` | nothing (remove irrelevant `path_instructions` only if needed) |
 | `.github/labeler.yml` | adjust folder globs if repo uses non-standard dirs (e.g. `apps/web/**`, `apps/api/**`) |
-| `.github/workflows/ci.yml` | `CI_DIRS` if code isn't at root (e.g. `". backend frontend"`). Add dummy build-time `env:` values if needed |
+| `.github/workflows/ci.yml` | `CI_DIRS: "auto"` auto-discovers Node/Bun/pnpm, Python, Go, Flutter, and monorepo subdirs (`backend`, `frontend`, `sdk`, `proxy-go`, etc.). Override `CI_DIRS` only if needed, and add dummy build-time `env:` values if the build requires them |
 | `.github/workflows/codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml` | auto-run on public repos; on private repos `setup-github-repo.ps1` sets `ENABLE_CODEQL` / `ENABLE_DEPENDENCY_REVIEW` if GHAS is enabled (otherwise report that they are unavailable). For org-owned repos, add `GITLEAKS_LICENSE` secret for `secret-scan.yml` |
 | `.github/renovate.json`, `.github/workflows/renovate.yml` | nothing (auto-detects Node/Python/Docker/Actions; runs via `BOT_TOKEN` custom bot user) |
 | `.github/workflows/dependency-auto-merge.yml` | nothing (`AUTO_MERGE_MAJOR: "true"` merges every update that passes CI) |
@@ -246,10 +262,16 @@ Load credentials exactly as in Step 5, then run:
   -Region "<VERCEL_REGION>" `
   -IgnoreDocsOnlyBuilds
 
-# Subdomain CNAME wiring (Vercel or Render)
+# Subdomain CNAME wiring (Vercel / Render / Railway / GitHubPages / Custom)
 & "<TOOLKIT>\scripts\setup-subdomain.ps1" -Subdomain "<SUBDOMAIN>" -Platform Vercel -VercelProject "<VERCEL_PROJECT>"
 # OR
 & "<TOOLKIT>\scripts\setup-subdomain.ps1" -Subdomain "<SUBDOMAIN>" -Platform Render -RenderHost "<RENDER_HOST>"
+# OR
+& "<TOOLKIT>\scripts\setup-subdomain.ps1" -Subdomain "<SUBDOMAIN>" -Platform Railway -TargetHost "<RAILWAY_HOST>"
+# OR
+& "<TOOLKIT>\scripts\setup-subdomain.ps1" -Subdomain "<SUBDOMAIN>" -Platform GitHubPages
+# OR
+& "<TOOLKIT>\scripts\setup-subdomain.ps1" -Subdomain "<SUBDOMAIN>" -Platform Custom -TargetHost "<CUSTOM_TARGET>"
 ```
 
 If a credential is missing (and no local CLI fallback exists), **stop and tell the user which key is missing** instead of hanging.
