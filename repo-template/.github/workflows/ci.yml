@@ -3,16 +3,10 @@
 # ║  CI workflow. Goes to: <repo>/.github/workflows/ci.yml               ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 #
-# Works as-is: it auto-detects the stack in each folder listed in CI_DIRS.
-#   Node / Bun   → installs with the right package manager (from the lockfile),
-#                  then runs lint, format:check, typecheck, build, test, and
-#                  Playwright E2E tests (when playwright.config.* exists)
-#   Python       → installs from uv.lock / pyproject.toml / requirements.txt,
-#                  byte-compiles everything, runs ruff / mypy / pytest if present
-#
-# The only things you may need to edit:
-#   1. CI_DIRS:  space-separated folders to check, e.g. ". backend frontend"
-#   2. env:      dummy values for env vars your build reads at build time
+# Works as-is on single apps AND monorepos:
+#   CI_DIRS: "auto" (default) discovers root + subdirs with manifests
+#     (Node/Bun/pnpm, Python, Go, Flutter/Dart, or static HTML fallback).
+#   Override CI_DIRS (e.g. ". backend frontend") if needed.
 #
 # Keep workflow name `CI` and job name `ci` — dependency-auto-merge.yml
 # and branch rulesets depend on them.
@@ -33,7 +27,7 @@ permissions:
   contents: read
 
 env:
-  CI_DIRS: "."
+  CI_DIRS: "auto"
   NODE_DEFAULT_VERSION: "22"
   PYTHON_DEFAULT_VERSION: "3.12"
   RUN_E2E: "true"
@@ -53,16 +47,61 @@ jobs:
       - name: Detect stacks
         id: detect
         run: |
-          node=false; bun=false; pnpm=false; python=false; e2e=false
+          set -euo pipefail
+          node=false; bun=false; pnpm=false; pnpm_pkg_mgr=false
+          python=false; go=false; flutter=false; e2e=false
+          go_mod_file=""
           node_version="$NODE_DEFAULT_VERSION"
           python_version="$PYTHON_DEFAULT_VERSION"
 
-          for d in $CI_DIRS; do
+          if [ "$CI_DIRS" = "auto" ]; then
+            has_root_workspaces=false
+            if [ -f package.json ] && node -e 'process.exit(Array.isArray(require("./package.json").workspaces) || (require("./package.json").workspaces && typeof require("./package.json").workspaces === "object") ? 0 : 1)' 2>/dev/null; then
+              has_root_workspaces=true
+            fi
+
+            mapfile -t found_dirs < <(
+              find . -maxdepth 3 \
+                \( -name node_modules -o -name .git -o -name .venv -o -name venv -o -name dist -o -name .next -o -name build -o -name out -o -name coverage -o -name .dart_tool -o -name android -o -name ios -o -name macos -o -name windows -o -name linux -o -name examples \) -prune \
+                -o -type f \( -name package.json -o -name pyproject.toml -o -name requirements.txt -o -name setup.py -o -name go.mod -o -name pubspec.yaml \) -print \
+              | xargs -r -n1 dirname | sort -u
+            )
+
+            resolved_arr=()
+            for d in "${found_dirs[@]}"; do
+              if [ "$d" != "." ] && [ "$has_root_workspaces" = true ] && [ -f "$d/package.json" ]; then
+                # Skip workspace child if it has no independent lockfile or non-Node manifest
+                if [ ! -f "$d/pnpm-lock.yaml" ] && [ ! -f "$d/package-lock.json" ] && [ ! -f "$d/yarn.lock" ] && [ ! -f "$d/bun.lock" ] && [ ! -f "$d/bun.lockb" ] && [ ! -f "$d/pyproject.toml" ] && [ ! -f "$d/requirements.txt" ] && [ ! -f "$d/go.mod" ] && [ ! -f "$d/pubspec.yaml" ]; then
+                  continue
+                fi
+              fi
+              resolved_arr+=("$d")
+            done
+            if [ "${#resolved_arr[@]}" -eq 0 ]; then
+              resolved_dirs="."
+            else
+              resolved_dirs="${resolved_arr[*]}"
+            fi
+          else
+            resolved_dirs="$CI_DIRS"
+          fi
+
+          for d in $resolved_dirs; do
             [ -d "$d" ] || { echo "::error::CI_DIRS entry '$d' does not exist."; exit 1; }
-            [ -f "$d/package.json" ] && node=true
+            if [ -f "$d/package.json" ]; then
+              node=true
+              if node -e 'const p=require(process.argv[1]); process.exit(typeof p.packageManager==="string" && p.packageManager.startsWith("pnpm@") ? 0 : 1)' "$d/package.json" 2>/dev/null; then
+                pnpm_pkg_mgr=true
+              fi
+            fi
             { [ -f "$d/bun.lockb" ] || [ -f "$d/bun.lock" ]; } && bun=true
             [ -f "$d/pnpm-lock.yaml" ] && pnpm=true
             { [ -f "$d/pyproject.toml" ] || [ -f "$d/requirements.txt" ] || [ -f "$d/setup.py" ]; } && python=true
+            if [ -f "$d/go.mod" ]; then
+              go=true
+              [ -z "$go_mod_file" ] && go_mod_file="$d/go.mod"
+            fi
+            [ -f "$d/pubspec.yaml" ] && flutter=true
             for cfg in playwright.config.ts playwright.config.js playwright.config.mjs playwright.config.mts; do
               [ -f "$d/$cfg" ] && e2e=true
             done
@@ -73,32 +112,60 @@ jobs:
           done
 
           {
-            echo "node=$node"; echo "bun=$bun"; echo "pnpm=$pnpm"; echo "python=$python"; echo "e2e=$e2e"
+            echo "resolved_dirs=$resolved_dirs"
+            echo "node=$node"; echo "bun=$bun"; echo "pnpm=$pnpm"; echo "pnpm_pkg_mgr=$pnpm_pkg_mgr"
+            echo "python=$python"; echo "go=$go"; echo "go_mod_file=$go_mod_file"; echo "flutter=$flutter"; echo "e2e=$e2e"
             echo "node_version=$node_version"; echo "python_version=$python_version"
           } >> "$GITHUB_OUTPUT"
-          echo "Detected → node=$node bun=$bun pnpm=$pnpm python=$python e2e=$e2e"
+          echo "Detected dirs=[$resolved_dirs] → node=$node bun=$bun pnpm=$pnpm python=$python go=$go flutter=$flutter e2e=$e2e"
 
       - if: steps.detect.outputs.node == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: ${{ steps.detect.outputs.node_version }}
 
+      - if: steps.detect.outputs.pnpm == 'true' && steps.detect.outputs.pnpm_pkg_mgr == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: "**/pnpm-lock.yaml"
+
+      - if: steps.detect.outputs.pnpm == 'true' && steps.detect.outputs.pnpm_pkg_mgr != 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: "10"
+          cache: true
+          cache_dependency_path: "**/pnpm-lock.yaml"
+
       - if: steps.detect.outputs.bun == 'true'
         uses: oven-sh/setup-bun@v2
-
-      - if: steps.detect.outputs.pnpm == 'true'
-        run: corepack enable
 
       - if: steps.detect.outputs.python == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: ${{ steps.detect.outputs.python_version }}
 
+      - if: steps.detect.outputs.go == 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ steps.detect.outputs.go_mod_file }}
+          cache: true
+          cache-dependency-path: "**/go.sum"
+
+      - if: steps.detect.outputs.flutter == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          pub-cache: true
+
       - name: Install, lint, typecheck, build, test
+        env:
+          RESOLVED_DIRS: ${{ steps.detect.outputs.resolved_dirs }}
         run: |
           set -euo pipefail
 
-          has_script() {  # does package.json define a real (non-placeholder) script?
+          has_script() {
             node -e '
               const s = (require("./package.json").scripts || {})[process.argv[1]];
               process.exit(s && !/no test specified/.test(s) ? 0 : 1);
@@ -189,15 +256,45 @@ jobs:
             fi
           }
 
-          for d in $CI_DIRS; do
+          run_go() {
+            echo "::group::go vet / test / build"
+            go vet ./...
+            go test -race ./...
+            go build ./...
+            echo "::endgroup::"
+          }
+
+          run_flutter() {
+            echo "::group::flutter pub get / analyze / test"
+            flutter pub get
+            flutter analyze
+            if [ -d test ]; then
+              flutter test
+            fi
+            echo "::endgroup::"
+          }
+
+          any_ran=false
+          for d in $RESOLVED_DIRS; do
             echo "━━━ $d ━━━"
             ( cd "$d"
               ran=false
               if [ -f package.json ]; then run_node; ran=true; fi
               if [ -f pyproject.toml ] || [ -f requirements.txt ] || [ -f setup.py ]; then run_python; ran=true; fi
-              if [ "$ran" = false ]; then echo "No Node or Python project found in '$d', skipping."; fi
+              if [ -f go.mod ]; then run_go; ran=true; fi
+              if [ -f pubspec.yaml ]; then run_flutter; ran=true; fi
+              if [ "$ran" = false ]; then
+                if [ -f index.html ]; then
+                  [ -s index.html ] || { echo "::error::index.html is empty"; exit 1; }
+                  echo "Static HTML project verified (index.html non-empty)."
+                else
+                  echo "No supported manifest found in '$d', skipping."
+                fi
+              fi
             )
+            any_ran=true
           done
+          [ "$any_ran" = true ]
 
       - name: Upload Playwright report on failure
         if: failure() && steps.detect.outputs.e2e == 'true'

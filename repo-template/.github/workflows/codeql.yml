@@ -1,7 +1,7 @@
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
 # ║  CodeQL SAST scanning. Goes to: <repo>/.github/workflows/codeql.yml  ║
-# ║  Auto-detects JS/TS and Python; free on all public GitHub repos.     ║
+# ║  Auto-detects JS/TS, Python, and Go; free on all public repos.       ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 
 name: CodeQL
@@ -25,12 +25,14 @@ jobs:
     outputs:
       languages: ${{ steps.detect.outputs.languages }}
       has_languages: ${{ steps.detect.outputs.has_languages }}
+      go_mod_file: ${{ steps.detect.outputs.go_mod_file }}
     steps:
       - uses: actions/checkout@v7
       - name: Detect CodeQL languages
         id: detect
         run: |
           langs=()
+          go_mod_file=""
           if find . \( -name node_modules -o -name .git -o -name dist -o -name .next -o -name .venv -o -name venv \) -prune -o \
             -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mjs' -o -name '*.cjs' \) -print -quit | grep -q .; then
             langs+=('"javascript-typescript"')
@@ -38,6 +40,11 @@ jobs:
           if find . \( -name .venv -o -name venv -o -name .git -o -name node_modules \) -prune -o \
             -type f -name '*.py' -print -quit | grep -q .; then
             langs+=('"python"')
+          fi
+          if find . \( -name vendor -o -name .git -o -name node_modules \) -prune -o \
+            -type f -name '*.go' -print -quit | grep -q .; then
+            langs+=('"go"')
+            go_mod_file=$(find . -maxdepth 3 -name go.mod -not -path '*/vendor/*' -print -quit || true)
           fi
 
           if [ "${#langs[@]}" -eq 0 ]; then
@@ -47,6 +54,7 @@ jobs:
             joined=$(IFS=,; echo "[${langs[*]}]")
             echo "has_languages=true" >> "$GITHUB_OUTPUT"
             echo "languages=$joined" >> "$GITHUB_OUTPUT"
+            echo "go_mod_file=$go_mod_file" >> "$GITHUB_OUTPUT"
             echo "Detected CodeQL languages: $joined"
           fi
 
@@ -67,11 +75,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - if: matrix.language == 'go' && needs.detect-languages.outputs.go_mod_file != ''
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ needs.detect-languages.outputs.go_mod_file }}
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          build-mode: ${{ matrix.language == 'go' && 'autobuild' || 'none' }}
           queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
