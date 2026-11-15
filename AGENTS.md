@@ -224,7 +224,14 @@ Don't push. Show the user `git log --oneline` of your new commits and wait for a
 
 ## Step 5 — GitHub metadata, security & rulesets
 
-Topics: 5–10, lowercase, hyphen-separated (e.g. `nextjs`, `typescript`, `llm`, `developer-tools`). Max 20.
+**High-Intent Topics (8–12 tags, max 20):** Pick topics that bring actual users, developers, and traffic — **NEVER** use generic stack spam (`nextjs`, `react`, `typescript`, `javascript`, `tailwindcss`, `html`, `css`, `nodejs`, `python`, `frontend`, `backend`, `fullstack`, `web-app`, `website`, `portfolio`, `project`, `ai`).
+
+Build topics from **4 buckets** and verify exact GitHub `curated` / `featured` spelling via `gh api "search/topics?q=<keyword>"` first:
+
+1. **Exact Problem / Use-Case (3–4):** what users search to solve a problem (`api-monitoring`, `llm-observability`, `image-forensics`, `digital-twin`, `ai-code-review`, `mock-interview`, `flood-forecasting`).
+2. **GitHub Curated Discovery Hubs (2–3):** high-traffic curated pages (`self-hosted`, `developer-tools`, `code-quality`, `code-review`, `ai-agent`, `agentic-ai`, `generative-ai`, `claude-code`, `devsecops`, `computer-vision`, `automation`).
+3. **Delivery Form / Buyer Intent (1–2):** how people consume it (`cli-tool`, `python-sdk`, `npm-package`, `github-app`, `telegram-bot`, `desktop-app`, `mobile-app`, `local-first`, `repository-template`).
+4. **Specialized Engine / Protocol ONLY (1–2):** niche searchable tech (`opentelemetry`, `esp32`, `lorawan`, `mediapipe`, `lightgbm`, `sentinel-2`, `webgl`, `cadquery`, `mcp`, `playwright`).
 
 Your shell does not keep env vars between commands, so **load credentials and run the script in the same command**:
 
@@ -237,7 +244,7 @@ Get-Content $cred | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*(.+)$' } |
   -Repo "<REPO_NAME>" `
   -Description "<ONE_LINE_DESCRIPTION>" `
   -Homepage "<LIVE_URL>" `
-  -Topics "topic-1","topic-2","topic-3"
+  -Topics "problem-tag","use-case","curated-hub","delivery-form","niche-engine"
 ```
 
 Add `-StrictRuleset` if the user wants strict PR-only merges without admin bypass. Omit `-Homepage` if there's no live URL.

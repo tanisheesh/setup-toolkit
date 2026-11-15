@@ -107,11 +107,27 @@ function Update-RepoMeta($repoName, $homepageUrl, $desc) {
 }
 
 function Update-RepoTopics($repoName, $topicList) {
+    $genericTags = @(
+        "nextjs", "next", "react", "reactjs", "typescript", "javascript", "js", "ts",
+        "tailwindcss", "tailwind", "html", "css", "nodejs", "node", "python",
+        "frontend", "backend", "fullstack", "web-app", "webapp", "website", "portfolio", "project", "app", "ai"
+    )
+    $cleanTopics = @($topicList | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ } | Select-Object -Unique)
+    if ($cleanTopics.Count -gt 20) {
+        Write-Host "    [Topics]   WARN: GitHub allows max 20 topics; truncating from $($cleanTopics.Count) to 20" -ForegroundColor Yellow
+        $cleanTopics = @($cleanTopics | Select-Object -First 20)
+    }
+    foreach ($t in $cleanTopics) {
+        if ($t -in $genericTags) {
+            Write-Host "    [Topics]   WARN: Generic tag '$t' has low discovery value — prefer problem/use-case/curated topics" -ForegroundColor Yellow
+        }
+    }
+
     $uri = "https://api.github.com/repos/$Owner/$([uri]::EscapeDataString($repoName))/topics"
-    $body = @{ names = @($topicList) } | ConvertTo-Json
+    $body = @{ names = @($cleanTopics) } | ConvertTo-Json
     try {
         Invoke-RestMethod -Method PUT -Uri $uri -Headers (Get-Headers) -Body $body | Out-Null
-        Write-Host "    [Topics]   $($topicList -join ', ')" -ForegroundColor Green
+        Write-Host "    [Topics]   $($cleanTopics -join ', ')" -ForegroundColor Green
     } catch {
         Write-Host "    [Topics]   ERROR: $(Get-ApiErrorMessage $_)" -ForegroundColor Red
     }

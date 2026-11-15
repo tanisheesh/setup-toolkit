@@ -119,7 +119,7 @@ Get-Content .\.env | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*(.+)$' } |
 
 .\scripts\setup-github-repo.ps1 -Repo "my-app" `
   -Description "One-line pitch" -Homepage "https://myapp.tanisheesh.in" `
-  -Topics "nextjs","typescript","ai"
+  -Topics "api-monitoring","llm-observability","opentelemetry","self-hosted","developer-tools","python-sdk"
 
 .\scripts\setup-vercel-project.ps1 -Project "my-app" -RepoPath "..\my-app" -Region "bom1" -IgnoreDocsOnlyBuilds
 .\scripts\setup-subdomain.ps1 -Subdomain "myapp" -Platform Vercel -VercelProject "my-app"
