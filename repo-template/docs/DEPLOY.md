@@ -125,7 +125,7 @@ After rolling back, note it in a commit or PR so the next push doesn't silently 
 - **Logs:** {{Vercel → Project → Logs / Render → Service → Logs}}
 - **Errors:** {{e.g. Sentry project link, or "none yet"}}
 - **Uptime:** {{e.g. UptimeRobot on /api/health, or "none yet"}}
-- **Dependencies:** Dependabot opens weekly update PRs and a maintenance report is emailed every week (see `.github/workflows/`)
+- **Dependencies:** Renovate opens weekly update PRs and a maintenance report is emailed every week (see `.github/workflows/`)
 
 ---
 

@@ -76,16 +76,23 @@ Every repo set up with `repo-template/` gets:
   - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
 - **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` / `CLAUDE.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
 - **Quality & release automation:** `ci.yml` (lint, format, typecheck, build, unit/integration, Playwright E2E + artifact upload), `labeler.yml`, `release.yml`, and `CODEOWNERS`
+- **Custom-branded dependency updates (`renovate.json` + `renovate.yml` + `BOT_TOKEN`):** Uses a dedicated GitHub bot account so dependency PRs, commits, and the Contributors list display your custom bot avatar and Display Name (e.g. `Dependabot [bot]`) instead of `dependabot[bot]`
 - **Weekly maintenance loop (IST):**
 
 | When (IST) | What happens |
 |---|---|
-| Monday 06:00 | Dependabot opens grouped minor/patch PRs and individual major PRs |
+| Monday 06:00 | Renovate (as your custom bot via `BOT_TOKEN`) opens grouped minor/patch PRs and individual major PRs |
 | Monday 10:45 | Weekly scheduled CodeQL scan runs on `main` |
 | On each PR | `ci.yml`, `codeql.yml`, `secret-scan.yml`, `dependency-review.yml`, and `labeler.yml` run |
-| CI passes | `dependabot-auto-merge.yml` squash-merges Dependabot PRs automatically |
+| CI passes | `dependency-auto-merge.yml` squash-merges update PRs as your custom bot automatically |
 | CI fails | PR stays open with `needs-review` label and comment |
-| Monday 10:00 | `maintenance-report.yml` emails Dependabot, CodeQL, Secret Scanning, and `main` CI summary |
+| Monday 10:00 | `maintenance-report.yml` emails dependency updates, Dependabot alerts, CodeQL, Secret Scanning, and `main` CI summary |
+
+### One-time custom bot account setup (`BOT_TOKEN`)
+
+1. Create a secondary GitHub user account (e.g. username `tanisheesh-bot`), set its **Display Name** to `Dependabot [bot]` (or any name with spaces), and upload your custom profile image.
+2. On that bot account, generate a classic PAT with `repo` and `workflow` scopes and paste it into `setup-toolkit/.env` as `BOT_TOKEN=`.
+3. Run `setup-github-repo.ps1` on any repo — it automatically sets `BOT_TOKEN` & `BOT_USERNAME`, invites the bot as collaborator, accepts the invite, and disables `dependabot[bot]` PRs while keeping Dependabot security alerts enabled.
 
 ---
 

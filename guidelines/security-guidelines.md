@@ -66,7 +66,7 @@ Security is built into every PR — not bolted on before launch. Every repo must
 - **CodeQL (`codeql.yml`):** Semantic SAST on PRs, `main`, and weekly schedule (`security-extended,security-and-quality`).
 - **Dependency Review (`dependency-review.yml`):** Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses.
 - **Gitleaks (`secret-scan.yml`) + GitHub Push Protection:** Catches leaked credentials in PRs and blocks secret pushes.
-- **Dependabot + Weekly Maintenance Report:** Automated patching + security alert digest.
+- **Automated Patching + Weekly Maintenance Report:** Renovate dependency/OSV patching + security alert digest.
 
 ---
 

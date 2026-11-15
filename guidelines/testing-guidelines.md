@@ -6,7 +6,7 @@
 
 # 🧪 Testing Guidelines
 
-"It compiled" and "I clicked it once locally" are not tests. Every non-trivial repo needs automated tests across the full stack so CI and Dependabot auto-merge can protect `main` with confidence.
+"It compiled" and "I clicked it once locally" are not tests. Every non-trivial repo needs automated tests across the full stack so CI and automated dependency merging can protect `main` with confidence.
 
 ---
 

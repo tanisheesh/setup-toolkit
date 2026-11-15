@@ -37,7 +37,7 @@
         PULL_REQUEST_TEMPLATE.md
         ISSUE_TEMPLATE/  bug_report.yml  feature_request.yml  config.yml
         FUNDING.yml                       ← only if the user has an active sponsor platform
-        dependabot.yml                    ← weekly dependency updates
+        renovate.json                     ← weekly dependency + OSV security update rules
         workflows/
           ci.yml                          ← lint / format / typecheck / build / unit+E2E test
           codeql.yml                      ← SAST scanning (JS/TS + Python, free on public repos)
@@ -46,8 +46,9 @@
           labeler.yml                     ← auto-labels PRs by path
           release.yml                     ← tag-based GitHub Release notes
           ai-review.yml                   ← optional BYOK AI PR reviewer (disabled unless ENABLE_AI_REVIEW=true)
-          dependabot-auto-merge.yml       ← merges Dependabot PRs once CI is green
-          maintenance-report.yml          ← emails a weekly report (Dependabot + CodeQL + Secrets + CI)
+          renovate.yml                    ← runs Renovate with custom bot user (BOT_TOKEN)
+          dependency-auto-merge.yml       ← merges Renovate PRs once CI is green
+          maintenance-report.yml          ← emails a weekly report (Deps + CodeQL + Secrets + CI)
     stack-templates/                      ← conditional templates (copy only what matches the stack)
       vercel.json                         → <repo>/vercel.json (security headers)
       render.yaml                         → <repo>/render.yaml (Render blueprint)
@@ -165,8 +166,8 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 | `.github/labeler.yml` | adjust folder globs if repo uses non-standard dirs (e.g. `apps/web/**`, `apps/api/**`) |
 | `.github/workflows/ci.yml` | `CI_DIRS` if code isn't at root (e.g. `". backend frontend"`). Add dummy build-time `env:` values if needed |
 | `.github/workflows/codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml` | auto-run on public repos; on private repos `setup-github-repo.ps1` sets `ENABLE_CODEQL` / `ENABLE_DEPENDENCY_REVIEW` if GHAS is enabled (otherwise report that they are unavailable). For org-owned repos, add `GITLEAKS_LICENSE` secret for `secret-scan.yml` |
-| `.github/dependabot.yml` | uncomment the ecosystems this repo uses (`npm` / `pip` / `uv` / `docker`), one block per manifest folder. Keep `github-actions` |
-| `.github/workflows/dependabot-auto-merge.yml` | nothing (`AUTO_MERGE_MAJOR: "true"` merges every update that passes CI) |
+| `.github/renovate.json`, `.github/workflows/renovate.yml` | nothing (auto-detects Node/Python/Docker/Actions; runs via `BOT_TOKEN` custom bot user) |
+| `.github/workflows/dependency-auto-merge.yml` | nothing (`AUTO_MERGE_MAJOR: "true"` merges every update that passes CI) |
 | `.github/workflows/maintenance-report.yml` | nothing. Email + alert secrets are set by `setup-github-repo.ps1` |
 | `.github/FUNDING.yml` | **ask the user** which sponsor platform is active. If none, don't copy it |
 
@@ -191,7 +192,7 @@ Make atomic commits, for example:
 📚 rewrite readme with standard template
 📚 add runtime agents.md, claude.md, contributing, security, code of conduct and changelog
 🔨 add pr, issue templates, codeowners, coderabbit and editorconfig
-👷 add ci, codeql, secret-scan, dependency-review, labeler, dependabot and maintenance report
+👷 add ci, codeql, secret-scan, dependency-review, labeler, renovate and maintenance report
 🧪 add playwright smoke and a11y baseline
 🔨 add .env.example and security headers config
 🔒 gitignore env files
@@ -221,9 +222,9 @@ Add `-StrictRuleset` if the user wants strict PR-only merges without admin bypas
 
 The script configures:
 - Description, homepage, topics, squash-only merge, auto-delete head branches, wiki off
-- Dependabot alerts, Dependabot security updates, private vulnerability reporting, Secret Scanning + Push Protection
+- Dependabot alerts, private vulnerability reporting, Secret Scanning + Push Protection (and disables `dependabot[bot]` PRs when `BOT_TOKEN` is set so Renovate's custom bot handles updates cleanly)
 - `"Protect main"` branch ruleset (`ci` required, linear history, no force-push/deletion)
-- Standard labels + `MAIL_USERNAME`, `MAIL_PASSWORD`, `ALERTS_TOKEN` (plus optional `REPORT_EMAIL` / AI keys if filled in `.env`)
+- Standard labels + `MAIL_USERNAME`, `MAIL_PASSWORD`, `ALERTS_TOKEN`, `BOT_TOKEN`, `BOT_USERNAME` (plus optional `REPORT_EMAIL` / AI keys if filled in `.env`) and auto-invites/accepts the bot collaborator
 
 Run this **after** the user has pushed, since the repo must exist on GitHub.
 
@@ -254,7 +255,7 @@ Check, then report to the user as a checklist:
 - [ ] `README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md` and `docs/PRD.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SETUP.md`, `DEPLOY.md` exist, with no `{{` and no `<!--` left
   (`grep -rn "{{\|<!--" *.md docs/`)
 - [ ] Every generated Markdown doc ends with the author footer (name, website, LinkedIn, GitHub, email)
-- [ ] `.coderabbit.yaml`, `.editorconfig`, `.github/CODEOWNERS`, `labeler.yml`, PR/issue templates, `dependabot.yml`, and workflows (`ci`, `codeql`, `dependency-review`, `secret-scan`, `labeler`, `release`, `dependabot-auto-merge`, `maintenance-report`) are configured
+- [ ] `.coderabbit.yaml`, `.editorconfig`, `.github/CODEOWNERS`, `labeler.yml`, PR/issue templates, `renovate.json`, and workflows (`ci`, `codeql`, `dependency-review`, `secret-scan`, `labeler`, `release`, `renovate`, `dependency-auto-merge`, `maintenance-report`) are configured
 - [ ] CI + test + security checks pass locally (or failures reported honestly to the user)
 - [ ] After push: CI, CodeQL, and Secret Scan are green on GitHub, and a manual run of "Maintenance report" succeeds
 - [ ] All README links resolve (docs files, live URL)
