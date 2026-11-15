@@ -1,20 +1,35 @@
 <div align="center">
 
-<sub><b>TANISH'S SETUP TOOLKIT</b> · the standard for every repo by <a href="https://tanisheesh.in">Tanish Poddar</a></sub>
+<sub><b>TANISH'S SETUP TOOLKIT</b> · the engineering standard for every repo by <a href="https://tanisheesh.in">Tanish Poddar</a></sub>
 
 </div>
+
+<p align="center">
+  <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"
+       fill="none" stroke="#F59E0B" stroke-width="1.5"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2L2 7l10 5 10-5-10-5Z"/>
+    <path d="M2 17l10 5 10-5"/>
+    <path d="M2 12l10 5 10-5"/>
+  </svg>
+</p>
 
 <h1 align="center">setup-toolkit</h1>
 
 <p align="center">
-  <strong>One playbook to standardize every repo: docs, runtime AI guardrails, anti-slop UI, security &amp; testing, GitHub automation, and Vercel/DNS provisioning.</strong>
+  <strong>One playbook to standardize, harden, and ship every repository — deep docs, runtime AI guardrails, anti-slop UI, 4-layer testing, GitHub security automation, and multi-host DNS provisioning.</strong>
 </p>
 
 <p align="center">
+  <a href="https://github.com/tanisheesh/setup-toolkit/actions/workflows/toolkit-ci.yml">
+    <img src="https://github.com/tanisheesh/setup-toolkit/actions/workflows/toolkit-ci.yml/badge.svg" alt="Toolkit CI">
+  </a>
   <img src="https://img.shields.io/badge/PowerShell-7+-5391FE?style=flat-square&logo=powershell&logoColor=white" alt="PowerShell 7+">
-  <img src="https://img.shields.io/badge/GitHub_Advanced-CodeQL_%C2%B7_Rulesets-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub">
+  <img src="https://img.shields.io/badge/CodeQL-JS%2FTS_%C2%B7_Python_%C2%B7_Go-181717?style=flat-square&logo=github&logoColor=white" alt="CodeQL">
+  <img src="https://img.shields.io/badge/Renovate-Yantra_[bot]-1A1F6C?style=flat-square&logo=renovate&logoColor=white" alt="Renovate">
   <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
   <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
+  <img src="https://img.shields.io/badge/Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white" alt="Railway">
   <img src="https://img.shields.io/badge/GoDaddy_DNS-1BDBDB?style=flat-square&logo=godaddy&logoColor=black" alt="GoDaddy DNS">
   <img src="https://img.shields.io/badge/agent--ready-AGENTS.md-111111?style=flat-square" alt="Agent ready">
 </p>
@@ -23,27 +38,36 @@
 
 ## What is this?
 
-Every project I ship gets the same engineering bar: deep numbers-backed docs, runtime `AGENTS.md` code-quality & anti-AI-slop UI rules, 4-layer testing, GitHub security scanning + rulesets + AI PR review, tuned Vercel settings, and a live `*.tanisheesh.in` URL.
+Every project I ship — across TypeScript, Next.js, Python, Go, Flutter, and multi-service monorepos — shares one engineering standard: code-grounded docs (`PRD`, `ARCHITECTURE` with Mermaid diagrams, quantitative `DECISIONS`, `SETUP`, `DEPLOY`, optional `USAGE`), a strict runtime `AGENTS.md` contract, automated SAST + secret scanning, custom-branded dependency maintenance via [**Yantra [bot]**](https://github.com/tanisheesh-bot), and live deployment wiring under `*.tanisheesh.in`.
 
-A coding agent reads `AGENTS.md` and applies the entire standard to any repo, asking only for values it can't infer from the code.
+A coding agent reads [`AGENTS.md`](AGENTS.md), audits the target codebase, asks only for what cannot be inferred from code, commits atomically in standard emoji style, and — after approval — configures GitHub, Vercel, and GoDaddy DNS.
 
 ---
 
-## Quick start
+## How to run it on a repo
 
-Clone next to your projects:
+Clone `setup-toolkit` alongside your project folders:
 
 ```text
 Projects/
-  setup-toolkit/     ← this repo
-  my-app/            ← the repo to set up
+  setup-toolkit/     ← this toolkit
+  my-app/            ← target repo
 ```
 
-Then open your coding agent inside `my-app/` and say:
+Open your coding agent inside `my-app/` and say:
 
 > Follow `../setup-toolkit/AGENTS.md` for this repo.
 
-The agent audits the codebase, asks for missing values in one turn, generates deep docs + runtime `AGENTS.md`, wires GitHub security & CI workflows, makes atomic emoji commits locally, and (after push) configures GitHub, Vercel, and GoDaddy DNS. **It never pushes without your approval.**
+### Repo Profiles & Modes
+
+[`AGENTS.md`](AGENTS.md) adapts automatically based on repo type and whether the repo already has an earlier toolkit setup:
+
+| Mode / Profile | How it behaves |
+|---|---|
+| **Fresh Setup** | Audits code, drafts all docs + runtime `AGENTS.md`, wires `.github/` automation, applies conditional `stack-templates/`, and commits locally without pushing |
+| **Upgrade Mode (v1 → v2)** | Preserves existing custom `README.md` / `docs/` while adding runtime `AGENTS.md`, `.coderabbit.yaml`, CodeQL, Gitleaks, Dependency Review, and Renovate (`Yantra [bot]`) |
+| **Portfolio / OSS / CLI** | `GPL-3.0` badge, `*.tanisheesh.in` URL, `/brag` launch demo video slot, and `docs/USAGE.md` (when CLI/SDK/API) |
+| **Private / Client Repo** | Drops `GPL-3.0` & `*.tanisheesh.in` assumptions, preserves client branding/domains, and handles private-repo scan gates cleanly |
 
 ---
 
@@ -51,54 +75,43 @@ The agent audits the codebase, asks for missing values in one turn, generates de
 
 | Path | Purpose |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | 7-step setup playbook for coding agents |
-| [`repo-template/`](repo-template) | Mirror-layout templates for README, deep `docs/` (PRD, Architecture w/ Mermaid, ADRs, Setup, Deploy, optional Usage), runtime `AGENTS.md`, `.coderabbit.yaml`, `.github/` workflows & community files |
-| [`stack-templates/`](stack-templates) | Conditional stack configs: `vercel.json` security headers, `render.yaml`, Playwright + `@axe-core/playwright` smoke tests |
-| [`guidelines/commit-style.md`](guidelines/commit-style.md) | Mandatory emoji commit format: `<emoji> [#issue] [scope:] <message>` |
-| [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Engineering standards, reusable component layering, PR rules, and git safety |
-| [`guidelines/ui-guidelines.md`](guidelines/ui-guidelines.md) | Anti-AI-slop UI rules, 4-state UI contract, WCAG AA accessibility, and visual checks |
-| [`guidelines/security-guidelines.md`](guidelines/security-guidelines.md) | Boundary validation, auth/IDOR, server secrets, headers, SSRF, and LLM safety |
-| [`guidelines/testing-guidelines.md`](guidelines/testing-guidelines.md) | 4-layer testing pyramid (unit, integration/API, Playwright E2E + a11y, regression) |
-| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Metadata, squash-only merge settings, Secret Scanning + Push Protection, `Protect main` ruleset, labels, and secrets |
-| [`scripts/setup-vercel-project.ps1`](scripts/setup-vercel-project.ps1) | Auto-detects stack/Node version and configures Vercel security, Fluid compute, region, and docs-ignore builds |
-| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Adds `<sub>.tanisheesh.in` on Vercel, Render, Railway, GitHub Pages, or Custom hosts and sets/overwrites the GoDaddy CNAME |
+| [`AGENTS.md`](AGENTS.md) | 7-step setup & v1→v2 upgrade playbook, safety rules, and verification checklist |
+| [`repo-template/`](repo-template) | 1:1 target repo mirror: runtime `AGENTS.md`, `README.md`, deep `docs/`, `.coderabbit.yaml`, `.editorconfig`, community files, and `.github/` |
+| [`stack-templates/`](stack-templates) | Conditional configs: `vercel.json` security headers, `render.yaml`, `playwright.config.ts` + `smoke.spec.ts` (E2E + WCAG AA a11y + viewport checks) |
+| [`guidelines/commit-style.md`](guidelines/commit-style.md) | Emoji commit format: `<emoji> [#issue] [scope:] <present tense lowercase message>` |
+| [`guidelines/dev-guidelines.md`](guidelines/dev-guidelines.md) | Engineering standards, reusable component layering (`ui/` vs `features/` vs `lib/`), PR rules, and git safety |
+| [`guidelines/ui-guidelines.md`](guidelines/ui-guidelines.md) | Anti-AI-slop UI rules, mandatory 4-state UI contract, WCAG AA accessibility, and visual checks |
+| [`guidelines/security-guidelines.md`](guidelines/security-guidelines.md) | Zod/Pydantic boundary validation, Auth/IDOR guards, server-only secrets, HMAC webhooks, SSRF, and LLM safety |
+| [`guidelines/testing-guidelines.md`](guidelines/testing-guidelines.md) | 4-layer testing pyramid across Web/Playwright, Node/TS, Python, Go, Flutter/Dart, and CLIs |
+| [`scripts/setup-github-repo.ps1`](scripts/setup-github-repo.ps1) | Sets metadata, squash-only merge rules, Secret Scanning + Push Protection, `Protect main` ruleset, labels, Secrets/Vars, and `Yantra [bot]` collaborator invite/accept |
+| [`scripts/setup-vercel-project.ps1`](scripts/setup-vercel-project.ps1) | Auto-detects framework & Node version (incl. monorepo `RootDirectory`) and sets Vercel security, region (`bom1`), Fluid compute, and docs-ignore builds |
+| [`scripts/setup-subdomain.ps1`](scripts/setup-subdomain.ps1) | Wires `<sub>.tanisheesh.in` on **Vercel**, **Render**, **Railway**, **GitHub Pages**, or **Custom** targets via host APIs + GoDaddy CNAME |
 
 ---
 
-## GitHub automation & self-maintenance
+## Automated Quality, Security & Maintenance Loop
 
-Every repo set up with `repo-template/` gets:
+Every repo configured with [`repo-template/`](repo-template) gets:
 
-- **Security scanning on every push & PR:**
-  - `codeql.yml` — CodeQL SAST (`security-extended,security-and-quality`) for JS/TS and Python (free on public repos)
-  - `secret-scan.yml` — Gitleaks secret detection across git history and PR diffs
-  - `dependency-review.yml` — Blocks PRs introducing high/critical CVEs or GPL-incompatible licenses
-  - GitHub Secret Scanning + Push Protection + Dependabot Alerts enabled via `setup-github-repo.ps1`
-- **AI PR review:** `.coderabbit.yaml` reads the repo's `AGENTS.md` directly (free on public repos), with optional local pre-PR checks via `coderabbit review --agent` and `ai-review.yml` BYOK fallback for private repos
-- **Quality & release automation:** `ci.yml` (`CI_DIRS: auto` monorepo discovery across Node/pnpm/Bun, Python, Go, Flutter + Playwright E2E), `codeql.yml` (JS/TS, Python, Go), `labeler.yml`, `release.yml`, and `CODEOWNERS`
-- **Custom-branded dependency updates (`renovate.json` + `renovate.yml` + `BOT_TOKEN`):** Uses a dedicated GitHub bot account so dependency PRs, commits, and the Contributors list display your custom bot avatar and Display Name (e.g. `Dependabot [bot]`) instead of `dependabot[bot]`
-- **Weekly maintenance loop (IST):**
+- **Universal CI (`ci.yml`):** `CI_DIRS: "auto"` discovers single apps and monorepos (`backend/`, `frontend/`, `sdk/`, `collector/`, `proxy-go/`, `mobile/`, `electron/`, etc.) across **Node / pnpm (`v6` cache) / Bun**, **Python (`uv` / `ruff` / `mypy` / `pytest`)**, **Go (`go vet` / `go test -race` / `go build`)**, **Flutter/Dart (`flutter analyze` / `flutter test`)**, **Playwright E2E**, and **static HTML**.
+- **Security Scanning:** `codeql.yml` (JS/TS, Python, Go), `secret-scan.yml` (Gitleaks v3), `dependency-review.yml` (high/critical CVEs + GPL-compatible license gate), plus GitHub Secret Scanning + Push Protection.
+- **AI Review & Launch Demos:** `.coderabbit.yaml` enforces `AGENTS.md` + anti-slop rules on PRs (with optional `ai-review.yml` BYOK fallback for private repos and local `coderabbit review --agent` support), plus `/brag` launch video embedding under `README.md`'s `## Demo` section.
+- **Custom-Branded Dependency Maintenance (`Yantra [bot]`):** Uses [`@tanisheesh-bot`](https://github.com/tanisheesh-bot) (`BOT_TOKEN`) + `.github/renovate.json` so PRs, commits, and the Contributors list display a cohesive avatar and `Yantra [bot]` identity instead of `dependabot[bot]`:
 
 | When (IST) | What happens |
 |---|---|
-| Monday 06:00 | Renovate (as your custom bot via `BOT_TOKEN`) opens grouped minor/patch PRs and individual major PRs |
+| Monday 06:00 | `renovate.yml` runs as `Yantra [bot]`, opening grouped minor/patch PRs (with 3-day release cooldown) and individual `major` + OSV security PRs |
 | Monday 10:45 | Weekly scheduled CodeQL scan runs on `main` |
 | On each PR | `ci.yml`, `codeql.yml`, `secret-scan.yml`, `dependency-review.yml`, and `labeler.yml` run |
-| CI passes | `dependency-auto-merge.yml` squash-merges update PRs as your custom bot automatically |
+| CI passes | `dependency-auto-merge.yml` squash-merges verified PRs as `Yantra [bot]` automatically |
 | CI fails | PR stays open with `needs-review` label and comment |
-| Monday 10:00 | `maintenance-report.yml` emails dependency updates, Dependabot alerts, CodeQL, Secret Scanning, and `main` CI summary |
-
-### One-time custom bot account setup (`BOT_TOKEN`)
-
-1. Create a secondary GitHub user account (e.g. username `tanisheesh-bot`), set its **Display Name** to `Dependabot [bot]` (or any name with spaces), and upload your custom profile image.
-2. On that bot account, generate a classic PAT with `repo` and `workflow` scopes and paste it into `setup-toolkit/.env` as `BOT_TOKEN=`.
-3. Run `setup-github-repo.ps1` on any repo — it automatically sets `BOT_TOKEN` & `BOT_USERNAME`, invites the bot as collaborator, accepts the invite, and disables `dependabot[bot]` PRs while keeping Dependabot security alerts enabled.
+| Monday 10:00 | `maintenance-report.yml` emails merged/open PRs, Dependabot alerts, CodeQL alerts, Secret Scanning alerts, and `main` CI health |
 
 ---
 
-## Credentials & manual scripts
+## Credentials & Manual Scripts
 
-Copy `.env.example` to `.env` in this folder (gitignored), fill in the keys you use, and load `.env` into your PowerShell session before running scripts manually:
+Copy [`.env.example`](.env.example) to `.env` (gitignored), fill in the tokens you use (`GITHUB_TOKEN`, `BOT_TOKEN`, `VERCEL_TOKEN`, `RENDER_API_KEY`, `GODADDY_KEY`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `ALERTS_TOKEN`), and load `.env` into your PowerShell session before running scripts manually:
 
 ```powershell
 Get-Content .\.env | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*(.+)$' } |
