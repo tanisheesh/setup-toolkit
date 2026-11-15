@@ -80,8 +80,8 @@ it like a product pitch, not a feature list.}}
 
 ## Demo
 
-<!-- Optional: embed a Remotion-rendered promo MP4 (drag-drop on GitHub or raw URL)
-     or terminal/walkthrough GIF. Delete this section if no video exists yet. -->
+<!-- Optional: embed a launch/promo MP4 (e.g. generated with `/brag` -> brag-output/brag.mp4,
+     drag-dropped on GitHub) or terminal/walkthrough GIF. Delete if no video exists yet. -->
 
 {{VIDEO_OR_GIF_EMBED}}
 

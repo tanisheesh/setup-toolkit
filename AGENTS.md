@@ -149,7 +149,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 7. **README:**
    - Pick the logo from lucide.dev and inline its SVG paths. Keep only the stack badges that apply (including CI/CodeQL badges).
    - Keep it crisp and showcase-oriented (~130–160 rendered lines max; **no Quick Start / install walkthrough in `README.md`** — keep setup in `docs/SETUP.md` and end-user usage in `docs/USAGE.md`).
-   - If the project has a promo/demo video (e.g. rendered with Remotion via `remotion-dev/skills`), embed it under **Demo**; otherwise drop the section cleanly.
+   - If the project has a promo/demo video (e.g. rendered with `/brag` from `latent-spaces/brag`), embed it under **Demo**; otherwise drop the section cleanly.
    - In the Docs table, keep only rows for files that exist.
 8. **`docs/` depth (PRD, ARCHITECTURE, DECISIONS, SETUP, DEPLOY, optional USAGE):**
    - `PRD.md`: include quantified before/after baseline, Given/When/Then acceptance criteria, edge-case matrix, and unit economics/quota math.
