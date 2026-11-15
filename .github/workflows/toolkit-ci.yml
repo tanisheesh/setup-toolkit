@@ -50,7 +50,10 @@ jobs:
                   yaml.safe_load(f)
               print(f"OK YAML: {path}")
 
-          for path in sorted(pathlib.Path("stack-templates").rglob("*.json")):
+          for path in sorted(
+              list(pathlib.Path("stack-templates").rglob("*.json"))
+              + list(pathlib.Path("repo-template").rglob("*.json"))
+          ):
               with path.open("r", encoding="utf-8") as f:
                   json.load(f)
               print(f"OK JSON: {path}")

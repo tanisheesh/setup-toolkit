@@ -119,10 +119,13 @@ function Update-RepoTopics($repoName, $topicList) {
 
 function Enable-RepoSecurity($repoName) {
     $base = "https://api.github.com/repos/$Owner/$([uri]::EscapeDataString($repoName))"
+    $hasBotToken = [bool][Environment]::GetEnvironmentVariable("BOT_TOKEN")
     $features = [ordered]@{
         "vulnerability-alerts"            = "Dependabot alerts"
-        "automated-security-fixes"        = "Dependabot security updates"
         "private-vulnerability-reporting" = "Private vulnerability reporting"
+    }
+    if (-not $hasBotToken) {
+        $features["automated-security-fixes"] = "Dependabot security updates"
     }
     foreach ($path in $features.Keys) {
         try {
@@ -131,6 +134,12 @@ function Enable-RepoSecurity($repoName) {
         } catch {
             Write-Host "    [Security] $($features[$path]) ERROR: $(Get-ApiErrorMessage $_)" -ForegroundColor Red
         }
+    }
+    if ($hasBotToken) {
+        try {
+            Invoke-RestMethod -Method DELETE -Uri "$base/automated-security-fixes" -Headers (Get-Headers) | Out-Null
+            Write-Host "    [Security] Built-in Dependabot PRs disabled (Renovate custom bot handles updates)" -ForegroundColor Green
+        } catch {}
     }
 
     # Secret scanning + push protection (available on all public repos)
@@ -250,6 +259,7 @@ function Sync-RepoLabels($repoName) {
         @{ name = "security";     color = "B60205"; description = "Security fix or hardening" },
         @{ name = "needs-review"; color = "D93F0B"; description = "Needs manual review" },
         @{ name = "dependencies"; color = "0366D6"; description = "Pull requests that update a dependency file" },
+        @{ name = "major";        color = "E11D48"; description = "Major version dependency update" },
         @{ name = "docs";         color = "0075CA"; description = "Documentation updates" },
         @{ name = "tests";        color = "0E8A16"; description = "Unit, integration, or E2E tests" },
         @{ name = "ci";           color = "EDEDED"; description = "GitHub Actions or CI changes" },
@@ -324,6 +334,64 @@ function Set-RepoSecrets($repoName) {
     }
 }
 
+function Sync-DependencyBot($repoName) {
+    $botToken = [Environment]::GetEnvironmentVariable("BOT_TOKEN")
+    if (-not $botToken) {
+        Write-Host "    [Bot]      BOT_TOKEN not in env — Renovate workflow will skip until BOT_TOKEN is set" -ForegroundColor Yellow
+        return
+    }
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+        Write-Host "    [Bot]      Skipped: GitHub CLI (gh) not installed" -ForegroundColor Yellow
+        return
+    }
+
+    $botHeaders = @{
+        "Authorization"        = "Bearer $botToken"
+        "Accept"               = "application/vnd.github+json"
+        "X-GitHub-Api-Version" = "2022-11-28"
+    }
+
+    try {
+        $botUser = Invoke-RestMethod -Method GET -Uri "https://api.github.com/user" -Headers $botHeaders
+    } catch {
+        Write-Host "    [Bot]      ERROR reading BOT_TOKEN identity: $(Get-ApiErrorMessage $_)" -ForegroundColor Red
+        return
+    }
+
+    $botLogin = $botUser.login
+    $botName = if ($botUser.name) { $botUser.name } else { $botLogin }
+
+    $code = Set-SecretStdin -name "BOT_TOKEN" -value $botToken -targetRepo "$Owner/$repoName"
+    if ($code -eq 0) {
+        Write-Host "    [Secrets]  BOT_TOKEN set ($botLogin · '$botName')" -ForegroundColor Green
+    } else {
+        Write-Host "    [Secrets]  BOT_TOKEN ERROR (gh exit $code)" -ForegroundColor Red
+    }
+
+    $env:GH_TOKEN = $GitHubToken
+    gh variable set BOT_USERNAME -b $botLogin -R "$Owner/$repoName" 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    [Vars]     BOT_USERNAME set ($botLogin)" -ForegroundColor Green
+    }
+
+    if ($botLogin -ne $Owner) {
+        $collabUri = "https://api.github.com/repos/$Owner/$([uri]::EscapeDataString($repoName))/collaborators/$([uri]::EscapeDataString($botLogin))"
+        try {
+            Invoke-RestMethod -Method PUT -Uri $collabUri -Headers (Get-Headers) -Body (@{ permission = "push" } | ConvertTo-Json) | Out-Null
+            Write-Host "    [Bot]      Collaborator invite sent to $botLogin" -ForegroundColor Green
+
+            $invites = Invoke-RestMethod -Method GET -Uri "https://api.github.com/user/repository_invitations" -Headers $botHeaders
+            $pending = $invites | Where-Object { $_.repository.full_name -eq "$Owner/$repoName" } | Select-Object -First 1
+            if ($pending) {
+                Invoke-RestMethod -Method PATCH -Uri "https://api.github.com/user/repository_invitations/$($pending.id)" -Headers $botHeaders | Out-Null
+                Write-Host "    [Bot]      Collaborator invite auto-accepted for $botLogin" -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "    [Bot]      Collaborator setup WARN: $(Get-ApiErrorMessage $_)" -ForegroundColor Yellow
+        }
+    }
+}
+
 function Sync-PrivateScanVars($repoName) {
     $uri = "https://api.github.com/repos/$Owner/$([uri]::EscapeDataString($repoName))"
     try {
@@ -363,7 +431,7 @@ if ($Topics.Count -gt 0) { Update-RepoTopics $Repo $Topics }
 if (-not $SkipSecurity)  { Enable-RepoSecurity $Repo; Sync-PrivateScanVars $Repo }
 if (-not $SkipRuleset)   { Sync-RepoRuleset $Repo }
 if (-not $SkipLabels)    { Sync-RepoLabels $Repo }
-if (-not $SkipSecrets)   { Set-RepoSecrets $Repo }
+if (-not $SkipSecrets)   { Set-RepoSecrets $Repo; Sync-DependencyBot $Repo }
 
 Write-Host "`n━━━ Done ━━━" -ForegroundColor Green
 Write-Host "Tanish's Setup Toolkit · tanisheesh.in · github.com/tanisheesh" -ForegroundColor DarkGray
