@@ -164,7 +164,7 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 | `.coderabbit.yaml`, `.github/CODEOWNERS`, `PULL_REQUEST_TEMPLATE.md`, `ISSUE_TEMPLATE/*` | nothing (remove irrelevant `path_instructions` only if needed) |
 | `.github/labeler.yml` | adjust folder globs if repo uses non-standard dirs (e.g. `apps/web/**`, `apps/api/**`) |
 | `.github/workflows/ci.yml` | `CI_DIRS` if code isn't at root (e.g. `". backend frontend"`). Add dummy build-time `env:` values if needed |
-| `.github/workflows/codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml` | nothing (work as-is) |
+| `.github/workflows/codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml` | auto-run on public repos; on private repos `setup-github-repo.ps1` sets `ENABLE_CODEQL` / `ENABLE_DEPENDENCY_REVIEW` if GHAS is enabled (otherwise report that they are unavailable). For org-owned repos, add `GITLEAKS_LICENSE` secret for `secret-scan.yml` |
 | `.github/dependabot.yml` | uncomment the ecosystems this repo uses (`npm` / `pip` / `uv` / `docker`), one block per manifest folder. Keep `github-actions` |
 | `.github/workflows/dependabot-auto-merge.yml` | nothing (`AUTO_MERGE_MAJOR: "true"` merges every update that passes CI) |
 | `.github/workflows/maintenance-report.yml` | nothing. Email + alert secrets are set by `setup-github-repo.ps1` |

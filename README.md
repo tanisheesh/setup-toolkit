@@ -91,9 +91,12 @@ Every repo set up with `repo-template/` gets:
 
 ## Credentials & manual scripts
 
-Copy `.env.example` to `.env` in this folder (gitignored) and fill in the keys you use:
+Copy `.env.example` to `.env` in this folder (gitignored), fill in the keys you use, and load `.env` into your PowerShell session before running scripts manually:
 
 ```powershell
+Get-Content .\.env | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*(.+)$' } |
+  ForEach-Object { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2].Trim(), 'Process') }
+
 .\scripts\setup-github-repo.ps1 -Repo "my-app" `
   -Description "One-line pitch" -Homepage "https://myapp.tanisheesh.in" `
   -Topics "nextjs","typescript","ai"
