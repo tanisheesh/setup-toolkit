@@ -4,20 +4,28 @@
 # ╚══════════════════════════════════════════════════════════════════════╝
 #
 # setup-subdomain.ps1
-# Adds ONE <subdomain>.tanisheesh.in to a Vercel project or Render service
-# and creates/overwrites the matching CNAME record in GoDaddy.
+# Adds ONE <subdomain>.tanisheesh.in CNAME in GoDaddy (and attaches the
+# custom domain on Vercel or Render automatically when those platforms are used).
 #
 # Usage:
 #   Vercel:
 #     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Vercel -VercelProject "<vercel-project-slug>"
 #   Render:
 #     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Render -RenderHost "<service>.onrender.com"
+#   Railway:
+#     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Railway -TargetHost "<app>.up.railway.app"
+#   GitHub Pages:
+#     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform GitHubPages
+#   Custom (Firebase App Hosting, etc.):
+#     .\setup-subdomain.ps1 -Subdomain "<prefix>" -Platform Custom -TargetHost "<cname-target>"
 
 param(
     [Parameter(Mandatory)][string]$Subdomain,
-    [Parameter(Mandatory)][ValidateSet("Vercel", "Render")][string]$Platform,
+    [Parameter(Mandatory)][ValidateSet("Vercel", "Render", "Railway", "GitHubPages", "Custom")][string]$Platform,
     [string]$VercelProject,
     [string]$RenderHost,
+    [string]$TargetHost,
+    [string]$Owner        = "tanisheesh",
     [string]$Domain       = "tanisheesh.in",
     [string]$VercelToken  = $env:VERCEL_TOKEN,
     [string]$GoDaddyKey   = $env:GODADDY_KEY,
@@ -197,6 +205,9 @@ function Add-RenderDomain($serviceId, $subdomainName) {
 
 if ($Platform -eq "Vercel" -and -not $VercelProject) { throw "-VercelProject is required when -Platform Vercel" }
 if ($Platform -eq "Render" -and -not $RenderHost)    { throw "-RenderHost is required when -Platform Render" }
+if ($Platform -eq "Railway" -and -not $TargetHost)   { throw "-TargetHost is required when -Platform Railway (e.g. <id>.up.railway.app)" }
+if ($Platform -eq "Custom" -and -not $TargetHost)    { throw "-TargetHost is required when -Platform Custom" }
+if ($Platform -eq "GitHubPages" -and -not $TargetHost) { $TargetHost = "$Owner.github.io" }
 
 $gddyCliPath = "$env:LOCALAPPDATA\Programs\gddy\gddy.exe"
 if (-not $GoDaddyKey -and -not (Test-Path $gddyCliPath)) {
@@ -216,7 +227,7 @@ Write-Host "`n━━━ $Subdomain.$Domain  ($Platform) ━━━" -ForegroundCo
 if ($Platform -eq "Vercel") {
     Add-VercelDomain $VercelProject $Subdomain
     Add-GoDaddyCNAME $Subdomain "cname.vercel-dns.com"
-} else {
+} elseif ($Platform -eq "Render") {
     $svcId = Get-RenderServiceId $RenderHost
     if ($svcId) {
         $ok = Add-RenderDomain $svcId $Subdomain
@@ -227,6 +238,15 @@ if ($Platform -eq "Vercel") {
         }
     } else {
         Write-Host "    [Render]  Service '$RenderHost' not found via API — skipping GoDaddy CNAME. Add domain in Render dashboard first." -ForegroundColor Yellow
+    }
+} else {
+    Add-GoDaddyCNAME $Subdomain $TargetHost
+    if ($Platform -eq "Railway") {
+        Write-Host "    [Railway] Remember to also add '$Subdomain.$Domain' under Railway Service -> Settings -> Networking -> Custom Domain." -ForegroundColor Yellow
+    } elseif ($Platform -eq "GitHubPages") {
+        Write-Host "    [Pages]   Remember to set Custom domain = '$Subdomain.$Domain' in GitHub Repo -> Settings -> Pages (or commit a CNAME file)." -ForegroundColor Yellow
+    } else {
+        Write-Host "    [Custom]  Remember to bind '$Subdomain.$Domain' in the target host dashboard." -ForegroundColor Yellow
     }
 }
 
