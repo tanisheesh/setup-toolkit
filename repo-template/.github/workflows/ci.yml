@@ -14,7 +14,7 @@
 #   1. CI_DIRS:  space-separated folders to check, e.g. ". backend frontend"
 #   2. env:      dummy values for env vars your build reads at build time
 #
-# Keep workflow name `CI` and job name `ci` — dependabot-auto-merge.yml
+# Keep workflow name `CI` and job name `ci` — dependency-auto-merge.yml
 # and branch rulesets depend on them.
 
 name: CI

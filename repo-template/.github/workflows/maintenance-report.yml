@@ -4,7 +4,7 @@
 # ║  Goes to: <repo>/.github/workflows/maintenance-report.yml            ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 #
-# Every Monday 10:00 IST (after Dependabot + auto-merge + CodeQL) this emails:
+# Every Monday 10:00 IST (after Renovate + auto-merge + CodeQL) this emails:
 #   • dependency updates merged automatically this period
 #   • update PRs still open / needing review (CI failed, or major held back)
 #   • open Dependabot security alerts (if ALERTS_TOKEN is set)
@@ -50,16 +50,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ALERTS_TOKEN: ${{ secrets.ALERTS_TOKEN }}
+          BOT_USERNAME: ${{ vars.BOT_USERNAME }}
           REPO: ${{ github.repository }}
         run: |
           set -uo pipefail
           since=$(date -u -d "$PERIOD_DAYS days ago" +%Y-%m-%d)
           today=$(date -u +%Y-%m-%d)
+          bot_author="${BOT_USERNAME:-app/dependabot}"
 
           merged=$(gh pr list -R "$REPO" --state merged --limit 100 \
-            --search "author:app/dependabot merged:>=$since" \
+            --search "author:$bot_author merged:>=$since" \
             --json number,title,url 2>/dev/null || echo '[]')
-          open=$(gh pr list -R "$REPO" --state open --author "app/dependabot" --limit 100 \
+          open=$(gh pr list -R "$REPO" --state open --author "$bot_author" --limit 100 \
             --json number,title,url,labels 2>/dev/null || echo '[]')
           ci=$(gh run list -R "$REPO" --workflow ci.yml --branch main --limit 1 \
             --json conclusion,status,url,createdAt 2>/dev/null || echo '[]')
