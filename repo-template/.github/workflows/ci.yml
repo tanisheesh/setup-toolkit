@@ -63,8 +63,8 @@ jobs:
             mapfile -t found_dirs < <(
               find . -maxdepth 3 \
                 \( -name node_modules -o -name .git -o -name .venv -o -name venv -o -name dist -o -name .next -o -name build -o -name out -o -name coverage -o -name .dart_tool -o -name android -o -name ios -o -name macos -o -name windows -o -name linux -o -name examples \) -prune \
-                -o -type f \( -name package.json -o -name pyproject.toml -o -name requirements.txt -o -name setup.py -o -name go.mod -o -name pubspec.yaml \) -print \
-              | xargs -r -n1 dirname | sort -u
+                -o -type f \( -name package.json -o -name pyproject.toml -o -name requirements.txt -o -name setup.py -o -name go.mod -o -name pubspec.yaml \) -print0 \
+              | xargs -r -0 -n1 dirname | sort -u
             )
 
             resolved_arr=()

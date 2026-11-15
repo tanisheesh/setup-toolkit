@@ -48,13 +48,17 @@ jobs:
           fi
 
           if [ "${#langs[@]}" -eq 0 ]; then
-            echo "has_languages=false" >> "$GITHUB_OUTPUT"
-            echo "languages=[]" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_languages=false"
+              echo "languages=[]"
+            } >> "$GITHUB_OUTPUT"
           else
             joined=$(IFS=,; echo "[${langs[*]}]")
-            echo "has_languages=true" >> "$GITHUB_OUTPUT"
-            echo "languages=$joined" >> "$GITHUB_OUTPUT"
-            echo "go_mod_file=$go_mod_file" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_languages=true"
+              echo "languages=$joined"
+              echo "go_mod_file=$go_mod_file"
+            } >> "$GITHUB_OUTPUT"
             echo "Detected CodeQL languages: $joined"
           fi
 
