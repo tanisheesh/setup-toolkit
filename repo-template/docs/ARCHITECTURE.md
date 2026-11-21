@@ -207,8 +207,8 @@ erDiagram
 
 ## 11. Explicit Scope Cuts
 
-- **{{Feature}}** — {{why deliberately excluded from v1}}
-- **{{Feature}}** — {{why deliberately excluded from v1}}
+- **{{Feature}}** — {{why deliberately excluded from current scope}}
+- **{{Feature}}** — {{why deliberately excluded from current scope}}
 
 ---
 

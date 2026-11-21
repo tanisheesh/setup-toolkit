@@ -73,7 +73,7 @@
 
 ---
 
-## What I'd do differently in v2
+## What I'd improve next
 
 - **{{Thing 1}}** — {{concrete reason + what unlocks it}}
 - **{{Thing 2}}** — {{concrete reason + what unlocks it}}
@@ -81,7 +81,7 @@
 
 ---
 
-## Explicit Non-Decisions (Deferred to v2)
+## Explicit Non-Decisions (Deferred)
 
 | Feature | Why Deferred | Trigger to Build |
 |---|---|---|

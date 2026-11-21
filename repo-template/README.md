@@ -149,7 +149,7 @@ it like a product pitch, not a feature list.}}
 **Why {{ARCHITECTURE_CHOICE}}?**
 {{e.g. "Z-score anomaly detection runs before the LLM — the model receives only structured findings (< 800 tokens), never raw telemetry."}}
 
-**What would you do differently in v2?**
+**What would you improve next?**
 {{Honest answer — shows self-awareness and clear threshold for change.}}
 
 ---

@@ -9,7 +9,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | {{Draft / Final / v1.0 Live}} |
+| **Status** | {{Draft / Final / Live}} |
 | **Owner** | Tanish Poddar |
 | **Live URL** | [{{LIVE_URL}}]({{LIVE_URL}}) |
 | **One-liner** | {{Same one-liner as README — what it is in one sentence.}} |
@@ -26,7 +26,7 @@ manual steps, cost). 1 short paragraph + Before/After comparison table.
 
 {{...}}
 
-| Dimension | Before (Manual / Baseline) | After (v1 Target) |
+| Dimension | Before (Manual / Baseline) | After (Target) |
 |---|---|---|
 | {{e.g. Time to complete workflow}} | {{e.g. 15–20 min manual copy-paste}} | {{e.g. < 10s automated end-to-end}} |
 | {{e.g. Error / drop-off rate}} | {{e.g. Frequent missed steps / stale data}} | {{e.g. Deterministic validation + zero silent drops}} |
@@ -34,10 +34,10 @@ manual steps, cost). 1 short paragraph + Before/After comparison table.
 
 ---
 
-## 2. Goals (v1 / MVP)
+## 2. Goals (MVP)
 
 <!--
-What must be true for v1 to be "done"?
+What must be true for this release to be "done"?
 Numbered list, each one measurable or testable — never vague like "good UX".
 -->
 
@@ -51,7 +51,7 @@ Numbered list, each one measurable or testable — never vague like "good UX".
 ## 3. Non-Goals (Explicit Scope Cuts)
 
 <!--
-What are you deliberately NOT building in v1, and what trigger would justify building it?
+What are you deliberately NOT building right now, and what trigger would justify building it?
 -->
 
 - **{{Feature X}}** — {{why deferred, and exact trigger to revisit}}
@@ -166,14 +166,14 @@ Delete rows that don't apply.
 |---|---|---|
 | **{{Risk 1 — e.g. Upstream rate limits}}** | {{e.g. High}} | {{e.g. Cached responses + per-user rate limiter + backoff}} |
 | **{{Risk 2 — e.g. Cold starts on free tier}}** | {{e.g. Medium}} | {{e.g. Health ping / graceful loading skeleton}} |
-| **{{Open question}}** | {{e.g. Low}} | {{e.g. Deferred until v2 demand}} |
+| **{{Open question}}** | {{e.g. Low}} | {{e.g. Deferred until user demand}} |
 
 ---
 
-## 12. v2 Candidates
+## 12. Future Roadmap
 
-- **{{Candidate 1}}** — {{why deferred from v1, expected scope}}
-- **{{Candidate 2}}** — {{why deferred from v1, expected scope}}
+- **{{Candidate 1}}** — {{why deferred, expected scope}}
+- **{{Candidate 2}}** — {{why deferred, expected scope}}
 
 ---
 
