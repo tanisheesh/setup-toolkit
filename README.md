@@ -58,16 +58,16 @@ Open your coding agent inside `my-app/` and say:
 
 > Follow `../setup-toolkit/AGENTS.md` for this repo.
 
-### Repo Profiles & Modes
+### Repo Profiles
 
-[`AGENTS.md`](AGENTS.md) adapts automatically based on repo type and whether the repo already has an earlier toolkit setup:
+[`AGENTS.md`](AGENTS.md) runs one standard setup flow and adapts automatically based on repo type (always preserving useful facts from any existing docs):
 
-| Mode / Profile | How it behaves |
+| Profile | How it behaves |
 |---|---|
-| **Fresh Setup** | Audits code, drafts all docs + runtime `AGENTS.md`, wires `.github/` automation, applies conditional `stack-templates/`, and commits locally without pushing |
-| **Upgrade Mode (v1 → v2)** | Preserves existing custom `README.md` / `docs/` while adding runtime `AGENTS.md`, `.coderabbit.yaml`, CodeQL, Gitleaks, Dependency Review, and Renovate (`Yantra [bot]`) |
-| **Portfolio / OSS / CLI** | `GPL-3.0` badge, `*.tanisheesh.in` URL, `/brag` launch demo video slot, and `docs/USAGE.md` (when CLI/SDK/API) |
-| **Private / Client Repo** | Drops `GPL-3.0` & `*.tanisheesh.in` assumptions, preserves client branding/domains, and handles private-repo scan gates cleanly |
+| **Portfolio** | `GPL-3.0` badge, `*.tanisheesh.in` URL, `/brag` launch demo video slot, full docs + CodeQL/Gitleaks |
+| **OSS Package / CLI** | Includes `docs/USAGE.md` (install, flags/SDK signatures, release flow) and omits UI-only sections when no frontend exists |
+| **Private Product** | Omits `GPL-3.0` badge & stealth URLs, keeps internal architecture/runbooks sharp, and handles private-repo scan gates cleanly |
+| **Client Website** | Preserves client branding, custom client domain, and client license/copyright without forcing `GPL-3.0` or `*.tanisheesh.in` |
 
 ---
 
@@ -75,7 +75,7 @@ Open your coding agent inside `my-app/` and say:
 
 | Path | Purpose |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | 7-step setup & v1→v2 upgrade playbook, safety rules, and verification checklist |
+| [`AGENTS.md`](AGENTS.md) | 7-step repo setup playbook, safety rules, and verification checklist |
 | [`repo-template/`](repo-template) | 1:1 target repo mirror: runtime `AGENTS.md`, `README.md`, deep `docs/`, `.coderabbit.yaml`, `.editorconfig`, community files, and `.github/` |
 | [`stack-templates/`](stack-templates) | Conditional configs: `vercel.json` security headers, `render.yaml`, `playwright.config.ts` + `smoke.spec.ts` (E2E + WCAG AA a11y + viewport checks) |
 | [`guidelines/commit-style.md`](guidelines/commit-style.md) | Emoji commit format: `<emoji> [#issue] [scope:] <present tense lowercase message>` |

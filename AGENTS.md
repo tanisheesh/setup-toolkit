@@ -134,7 +134,7 @@ Fill this table. Auto-detect what you can; **ask the user for everything still b
 | Sponsor platform | **ask** (GitHub Sponsors / Buy Me a Coffee / Ko-fi / none) for `FUNDING.yml` |
 | Strict ruleset? | default is PR-enforced with admin bypass; ask if user wants strict PR-only (`-StrictRuleset`) |
 
-Also ask: *"Fresh setup or Upgrade (existing v1 toolkit repo)? Which steps: docs & runtime AGENTS.md / GitHub metadata & scanning / Vercel settings / subdomain?"* If the user already said, skip asking.
+Also ask: *"Which steps should I run: docs & runtime AGENTS.md / GitHub metadata & scanning / Vercel settings / subdomain?"* If the user already said, skip asking.
 
 ### Repo Profiles (Adjust Standards by Type)
 
@@ -145,14 +145,7 @@ Also ask: *"Fresh setup or Upgrade (existing v1 toolkit repo)? Which steps: docs
 
 ## Step 3 — Write the docs & runtime coding contract
 
-> **Upgrade Mode (Repo Already Has v1 Docs & Workflows):**
-> Do **NOT** overwrite custom `README.md` or `docs/*.md` unless missing sections or explicitly requested. Instead:
-> 1. Add missing `AGENTS.md` (runtime) and `.coderabbit.yaml` + `.github/CODEOWNERS` + `.github/labeler.yml`.
-> 2. Remove legacy `.github/dependabot.yml` and `.github/workflows/dependabot-auto-merge.yml` (if present).
-> 3. Copy/upgrade `.github/workflows/` (`ci.yml`, `codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml`, `renovate.yml`, `dependency-auto-merge.yml`, `maintenance-report.yml`) + `.github/renovate.json`.
-> 4. Preserve any repo-specific custom workflows (e.g. `bench.yml`, `release-sdk*.yml`) untouched unless they use deprecated Node 20 actions.
-
-Copy each file from `repo-template/` to the **same relative path** in the repo, then fill it.
+Copy each file from `repo-template/` to the **same relative path** in the repo, then fill it (merging any useful facts from existing docs per Safety rule 4).
 
 1. Replace every `{{PLACEHOLDER}}` with real values from Step 1–2.
 2. Replace every `{{e.g. ...}}` hint with the repo's real content. Don't leave example text from the template.
@@ -188,10 +181,12 @@ Copy each file from `repo-template/` to the **same relative path** in the repo, 
 | `.github/labeler.yml` | adjust folder globs if repo uses non-standard dirs (e.g. `apps/web/**`, `apps/api/**`) |
 | `.github/workflows/ci.yml` | `CI_DIRS: "auto"` auto-discovers Node/Bun/pnpm, Python, Go, Flutter, and monorepo subdirs (`backend`, `frontend`, `sdk`, `proxy-go`, etc.). Override `CI_DIRS` only if needed, and add dummy build-time `env:` values if the build requires them |
 | `.github/workflows/codeql.yml`, `dependency-review.yml`, `secret-scan.yml`, `labeler.yml`, `release.yml`, `ai-review.yml` | auto-run on public repos; on private repos `setup-github-repo.ps1` sets `ENABLE_CODEQL` / `ENABLE_DEPENDENCY_REVIEW` if GHAS is enabled (otherwise report that they are unavailable). For org-owned repos, add `GITLEAKS_LICENSE` secret for `secret-scan.yml` |
-| `.github/renovate.json`, `.github/workflows/renovate.yml` | nothing (auto-detects Node/Python/Docker/Actions; runs via `BOT_TOKEN` custom bot user) |
+| `.github/renovate.json`, `.github/workflows/renovate.yml` | nothing (auto-detects Node/Python/Docker/Actions; runs via `BOT_TOKEN` custom bot user). Remove any legacy `.github/dependabot.yml` or `.github/workflows/dependabot-auto-merge.yml` if present |
 | `.github/workflows/dependency-auto-merge.yml` | nothing (`AUTO_MERGE_MAJOR: "true"` merges every update that passes CI) |
 | `.github/workflows/maintenance-report.yml` | nothing. Email + alert secrets are set by `setup-github-repo.ps1` |
 | `.github/FUNDING.yml` | **ask the user** which sponsor platform is active. If none, don't copy it |
+
+Keep any repo-specific custom workflows (e.g. `bench.yml`, `release-sdk*.yml`) untouched unless they use deprecated Node 20 actions.
 
 ### `stack-templates/` (Conditional)
 
